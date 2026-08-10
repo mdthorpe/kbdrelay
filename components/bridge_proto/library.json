@@ -1,0 +1,9 @@
+{
+  "name": "bridge_proto",
+  "version": "0.1.0",
+  "description": "Shared 12-byte SPI frame encode/decode + CRC8 for the kbdrelay bridge",
+  "build": {
+    "srcDir": ".",
+    "includeDir": "include"
+  }
+}

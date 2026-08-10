@@ -1,0 +1,4 @@
+idf_component_register(
+    SRCS "bridge_proto.c"
+    INCLUDE_DIRS "include"
+)

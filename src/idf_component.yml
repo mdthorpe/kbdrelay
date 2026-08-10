@@ -1,0 +1,11 @@
+## Managed component dependencies for the firmwares.
+## NOTE: this manifest is shared by all envs (single main component in src/).
+##   - esp_tinyusb  : used by tgt (USB device / boot keyboard)
+##   - usb_host_hid : used by kbd (USB host / reads the keyboard)
+##   - led_strip    : onboard WS2812 status LED
+## Envs that don't use a given driver still link it but never initialize it.
+dependencies:
+  idf: ">=5.0"
+  espressif/esp_tinyusb: "*"
+  espressif/usb_host_hid: "*"
+  espressif/led_strip: "^3.0.0"

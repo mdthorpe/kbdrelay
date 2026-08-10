@@ -1,0 +1,14 @@
+# PlatformIO
+.pio/
+
+# ESP-IDF generated per-env config (keep sdkconfig.defaults, ignore the rest)
+sdkconfig
+sdkconfig.*
+!sdkconfig.defaults
+
+# Managed components fetched by the IDF component manager
+managed_components/
+dependencies.lock
+
+# macOS
+.DS_Store
