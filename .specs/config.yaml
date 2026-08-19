@@ -6,20 +6,19 @@
 # are surfaced to the spec agent as project context.
 
 project:
-  goal: "Short statement of what this project is for."
+  goal: "Transparent two-board USB HID keyboard bridge (KBD host + TGT device over SPI) that presents any USB keyboard to a target as a vanilla USB 1.1 boot keyboard."
   tech_stack:
-    - "language/runtime"
-    - "framework"
-    - "datastore"
+    - "C / ESP-IDF 6.x (firmware)"
+    - "PlatformIO (build/flash/test)"
+    - "ESP32-S3 (Waveshare S3-Zero on the bench; custom PCB in progress)"
+    - "no datastore"
 
 principles:
   tdd: false # write tests first when true
   no_comments: false # omit code comments when true
-  # add any other principles your team wants the agent to honor
+  constitution: "Cheapest commonly-available parts that meet requirements; each board independently developable/testable; boring well-documented stacks; artifacts proportional to the problem."
 
 hooks:
   after_task:
-    - command: "npm test"
-      auto: false # true = agent runs it after each task; false = remind the user
-    # - command: "npm run lint"
-    #   auto: true
+    - command: "make test"
+      auto: false # host bridge_proto unit tests (native); firmware/PCB tasks are hardware-verified

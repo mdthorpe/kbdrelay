@@ -12,3 +12,19 @@ dependencies.lock
 
 # macOS
 .DS_Store
+
+# KiCad (commit .kicad_pro/.kicad_sch/.kicad_pcb, libs, fab/, BOM/BUILD; ignore noise)
+*-backups/
+_autosave-*
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*.bak
+fp-info-cache
+*.lck
+*~
+# per-user local project state (uncomment to ignore if it churns):
+*.kicad_prl
+
+# editor swap files
+*.swp
+*.swo
