@@ -13,7 +13,7 @@ joins two socketed Waveshare ESP32-S3-Zero modules (KBD + TGT) into the kbdrelay
 bridge, replacing the breadboard harness. USB stays on each module's USB-C
 (keyboard → KBD USB-C via adapter; TGT USB-C → target). The carrier provides:
 the SPI interconnect (with series resistors), KBD's protected 5 V power path
-(P-FET reverse polarity → bulk cap → polyfuse), strict isolation of the TGT 5 V
+(series-Schottky reverse polarity → bulk cap → polyfuse), strict isolation of the TGT 5 V
 domain, a power-good LED, per-module UART headers (with series resistors), and a
 reserved (unpopulated) soft-reset header. Firmware is unchanged from v1.
 
@@ -29,7 +29,7 @@ wire-jumper links on top). All discretes through-hole.
 - Enforce the FR5 power rules and back-power protection by construction
   (FR-010..FR-013, FR-020..FR-026).
 - Be etchable at home on a single copper layer with THT parts (NFR-001,
-  NFR-006), while giving the keyboard full 5 V (P-FET, no diode drop).
+  NFR-006), while keeping the keyboard's VBUS within USB limits.
 
 ### Non-Goals
 
@@ -43,7 +43,7 @@ wire-jumper links on top). All discretes through-hole.
 flowchart LR
   KB[USB keyboard] -->|USB-A→C adapter| KBDUSB[KBD USB-C]
   subgraph CARRIER[Single-sided THT carrier PCB]
-    PWR[2-pin 5V header] --> RP[P-FET reverse-polarity]
+    PWR[2-pin 5V header] --> RP[Schottky reverse-polarity]
     RP --> BULK[470µF + 0.1µF]
     BULK --> PF[polyfuse ~0.5A]
     PF --> KBD5V[KBD module 5V pin]
@@ -74,28 +74,54 @@ flowchart LR
 ### Power path (KBD) — FR-010..FR-013, FR-020..FR-022
 
 ```
-J_PWR(+5V) ──D──[ P-FET ]──S──┬── C_bulk(470µF) ──┬── F_poly(PPTC ~0.5A) ── KBD.5V
-                gate            │   C_dec(0.1µF)   │
-                 └─[100k]─ GND  │                  │
-J_PWR(GND) ───────────────────┴── common GND ─────┴──────────────────── KBD.GND
+J_PWR(+5V) ──▶|── D_rev(1N5817) ──┬── C_bulk(470µF) ──┬── F_poly(PPTC ~0.5A) ── KBD.5V
+                                   │   C_dec(0.1µF)    │
+J_PWR(GND) ────────────────────────┴── common GND ─────┴───────────────────────── KBD.GND
 ```
 
-- **Reverse polarity (P-FET ideal diode):** high-side P-channel MOSFET, **drain
-  → +5 V input, source → load rail, gate → GND via 100 kΩ**. Correct polarity:
-  body diode + Vgs≈−5 V turns the FET fully on (near-zero drop, keyboard gets
-  full 5 V). Reversed input: body diode blocks, FET stays off → protected.
-  Part: a **logic-level POWER P-channel MOSFET in TO-220 THT** (Vgs(th) ≈
-  −1..−2 V, Rds(on) specified at Vgs=−4.5 V and ≤~100 mΩ, Id ≥1 A, Vds ≥−20 V),
-  e.g. **Infineon IPPxxP03P4L** (OptiMOS logic-level) or **NDP6020P**.
-  ⚠ **Do NOT use small-signal TO-92 P-FETs** (Supertex VP2106 / TP2104-class):
-  their Rds is in the *ohms*, which drops >1 V and overheats at the ~0.3–0.4 A
-  this FET carries (KBD module + keyboard). Symbol: `Q_PMOS_GDS` (TO-220 is
-  G-D-S); footprint: `Package_TO_SOT_THT:TO-220-3_Vertical`. Exact part at BOM.
+- **Reverse polarity (series Schottky) — REVISED:** a plain **series Schottky
+  diode**, anode → +5 V input, cathode → protected rail. Reversed input: the
+  diode blocks → protected. This supersedes the earlier P-FET ideal-diode
+  design, which is dropped for **sourcing reasons**: logic-level POWER P-FETs in
+  THT (TO-220, Vgs(th) ≤2 V, Rds(on) ≤100 mΩ @ −4.5 V) are effectively
+  unobtainable at hobby quantities, while Schottkys are on hand.
+  Part: **1N5817** (1 A, 20 V, DO-41 axial); **1N5819** (40 V) is a drop-in.
+  Symbol: `Device:D_Schottky`; footprint: `Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal`.
+- **Voltage-headroom consequence (the one real cost):** at the expected ~0.3 A
+  (KBD module + keyboard) the 1N5817 drops ≈**0.30–0.35 V** and the PPTC adds
+  **0.06–0.14 V** (60R090), so a 5.00 V input lands the keyboard at
+  ≈**4.5–4.6 V** — above the USB 4.40 V floor, but the margin is finite where
+  the P-FET's was not. (With the originally-specified 0.5 A PPTC the worst case
+  was 4.30 V, i.e. **out of spec** — that is what drove the 0.9 A revision.)
+  Mitigations, in order of preference:
+  1. Feed J_PWR from a **5.1–5.25 V** supply (a USB-C PD/5 V brick measures
+     high anyway); this restores full margin.
+  2. If a marginal keyboard appears, fit a **SB540/SB560** (5 A, DO-201AD,
+     Vf ≈0.2–0.25 V at 0.3 A) — a larger axial part on the same 2-pad
+     footprint pitch.
+  3. Keep the rail trace short/fat (1.0 mm) so copper IR is negligible.
+  **Layout note:** provide the diode pads with enough pitch/pad size to also
+  accept a DO-201AD body, so the SB5x0 upgrade needs no board respin.
+- **Verify at bring-up:** measure the protected rail and the keyboard VBUS with
+  the highest-draw keyboard attached; **VBUS must read ≥4.40 V**.
 - **Bulk cap:** 470 µF (≥10 V) radial electrolytic + 0.1 µF ceramic, placed at
   the KBD 5V pin — the validated fix for keyboard inrush brownout.
-- **Polyfuse:** radial THT PPTC, hold ≈0.5 A / trip ≈1 A, in series to the KBD
-  5V pin (protects the source/board on a keyboard or cable short; passes any
-  normal keyboard ≥250 mA).
+- **Polyfuse (REVISED — 0.5 A → 0.9 A hold):** radial THT PPTC in series to the
+  KBD 5V pin, **Littelfuse 60R090** — hold **0.90 A**, trip **1.80 A**, 60 V,
+  Rₘᵢₙ 0.20 Ω / R₁ₘₐₓ **0.47 Ω**, body 11.2 × 3.1 mm, leads on 5.08 mm centres.
+  Supersedes the original ≈0.5 A / ≈1 A specification for two measured reasons:
+  1. **Nuisance-trip headroom.** A USB device may legally draw **500 mA**; plus
+     the KBD module (~60–80 mA) the legitimate load reaches **~0.58 A**. PPTC
+     hold current derates with ambient (**83 % at 40 °C**), so a 0.5 A part
+     holds only ~0.42 A in a warm enclosure and would trip on a legal keyboard.
+     0.90 A derates to ~0.75 A — a **29 % margin** over 0.58 A.
+  2. **Voltage headroom.** PPTC resistance scales inversely with hold rating.
+     Worst-case drop at 0.3 A falls from **0.35 V (60R050, R₁ₘₐₓ 1.17 Ω)** to
+     **0.14 V (60R090)** — 0.21 V handed back to keyboard VBUS, which is what
+     makes the series-Schottky choice comfortable rather than marginal.
+  Not taken any higher: at 60R110's 2.2 A trip a typical 5 V brick current-limits
+  first, which would move protection from the fuse to the supply.
+  Still satisfies FR-022 (passes ≥250 mA; clamps a short at 1.8 A).
 - **TGT power:** the TGT module's 5V pin is **left unconnected** on the carrier.
   Only GND + SPI reach TGT → FR5.1/FR5.3 by construction.
 
@@ -115,13 +141,29 @@ J_PWR(GND) ───────────────────┴── co
 - Series R limits inter-module backfeed/latch-up and cures the power-up-order
   pre-charge; at ≤1 MHz the RC with short traces is negligible.
 
-### Reserved soft-reset — FR-030 (reserve only)
+### Reset & flashing access — FR-030
 
-- **GP9 on both modules** tied to a shared node, each via a **1 kΩ series R**
-  (backfeed-safe), brought to an **unpopulated 2-pin header (`RST_BTN`, `GND`)**.
-- A future button shorts the node to GND; firmware (later) enables internal
-  pull-ups and calls `esp_restart()` on low → one button resets both modules.
-  No component populated for v1; costs only board area.
+- **The shared GP9 soft-reset node is REMOVED** (was: GP9 on both modules via
+  1 kΩ each to an unpopulated 2-pin `RST_BTN` header). Dropped for two reasons:
+  1. **It never satisfied FR-030.** FR-030 exists to support the *download-mode
+     flashing sequence*, which requires the hardware BOOT+RESET sequence. A GP9
+     line calling `esp_restart()` in firmware cannot enter download mode, and
+     per the v1 bench notes a software/line reset over native USB does not even
+     reliably restart the app.
+  2. **It cost real routing space.** `RST_BTN` is a net spanning *both* modules,
+     i.e. a full board-width run on a single-copper-layer board — a likely
+     forced jumper, in exchange for a feature nobody would use on a prototype.
+- **FR-030 is satisfied instead by the modules' own onboard BOOT and RESET
+  buttons.** The S3-Zeros sit in sockets on the top face, so their buttons stay
+  physically reachable. This makes it a **placement constraint, not a circuit**:
+  → *Layout SHALL leave both modules' BOOT and RESET buttons operable with the
+  boards seated — no tall neighbouring parts blocking finger/tool access.*
+- **GP9 is left unconnected** on both modules (no-connect flags). Deliberately
+  not broken out to pads either — on a single-sided board the routing cost is
+  real and the feature is unused. Revisit only if a **two-layer** revision
+  happens, where a shared reset node is nearly free to route.
+- Consequence accepted: there is no one-button "reset both modules". Power-cycle
+  J3 (KBD) or the target link (TGT), or press each module's own RESET.
 
 ### Debug UART — FR-026, FR-031
 
@@ -140,12 +182,12 @@ J_PWR(GND) ───────────────────┴── co
 - **Module sockets** — female 0.1" headers matching the S3-Zero (≈1×9 + 1×12
   per module); modules removable.
 - **J_UART_KBD / J_UART_TGT** — 3-pin (TX/RX/GND) each.
-- **J_RST** — 2-pin (RST_BTN/GND), unpopulated.
+- *(J_RST removed — see "Reset & flashing access".)*
 - **USB** — not on the carrier; each module's USB-C, edge-accessible.
 
 ## Error handling → Fault & protection behavior
 
-- **Reversed 5 V input:** P-FET blocks; no current, no damage (FR-020).
+- **Reversed 5 V input:** series Schottky blocks; no current, no damage (FR-020).
 - **Keyboard inrush:** bulk cap holds the rail; no brownout (FR-021).
 - **Keyboard/cable short:** polyfuse trips, protecting source/board; resets when
   cleared (FR-022).
@@ -165,9 +207,13 @@ J_PWR(GND) ───────────────────┴── co
 ## Testing Strategy
 
 - **Bare-board checks:** visual/continuity — 5 V and TGT-5V domains isolated;
-  GND common; SPI pin-to-pin; P-FET orientation; polyfuse in series.
-- **Power-on (no modules):** apply 5 V, verify protected rail voltage ≈ input
-  (P-FET low drop), power-good LED on; apply reversed 5 V, verify no rail.
+  GND common; SPI pin-to-pin; Schottky orientation (band = cathode = load side);
+  polyfuse in series.
+- **Power-on (no modules):** apply 5 V, verify protected rail ≈ input − ~0.3 V,
+  power-good LED on; apply reversed 5 V, verify no rail.
+- **Headroom check (loaded):** with the highest-draw keyboard running, measure
+  keyboard VBUS — **must be ≥4.40 V**; if not, raise the supply to ~5.2 V or
+  fit the SB5x0 alternate.
 - **Populated bring-up:** install modules + v1 firmware; reproduce AC1–AC5
   (typing, Caps/Num LED, hot-plug, watchdog) — these are the acceptance tests.
 - **Fault tests:** high-inrush keyboard enumerates first try; brief keyboard-VBUS
@@ -185,9 +231,9 @@ J_PWR(GND) ───────────────────┴── co
   ~2 mm pads.
 - **Outputs:** KiCad project, a 1:1 bottom-copper print for toner-transfer/home
   etch, and standard Gerbers for a PCB house.
-- **BOM (all THT):** P-FET, 100 k, 470 µF, 0.1 µF, PPTC ~0.5 A, 5× 2.2 k,
-  4× 1 k (UART) + 2× 1 k (reset series) , LED + ~1 k, J_PWR (1×2), 2× UART (1×3),
-  J_RST (1×2, unpopulated), module socket headers. Board outline + 4× M3 holes.
+- **BOM (all THT):** 1N5817 Schottky (SB540 alternate), 60R090 PPTC, 470 µF,
+  0.1 µF, 5× 2.2 k (SPI), 4× 1 k (UART), LED + 1 k, J_PWR (1×2),
+  2× UART (1×3), module socket headers. Board outline + 4× M3 holes.
 
 ## Requirements Traceability
 
@@ -200,12 +246,12 @@ J_PWR(GND) ───────────────────┴── co
 | FR-005 | Modules run v1 firmware | AC1–AC5 reproduced |
 | FR-010/011 | 2-pin 5V header → protected → KBD 5V → keyboard VBUS | Meter + keyboard powers |
 | FR-012/013 | TGT 5V pin unconnected; domains separate | Continuity (isolated) |
-| FR-020 | P-FET reverse polarity | Reversed-input test |
+| FR-020 | Series Schottky (1N5817) reverse polarity | Reversed-input test + loaded VBUS ≥4.40 V |
 | FR-021 | 470 µF + 0.1 µF bulk | High-inrush kb enumerates |
-| FR-022 | ~0.5 A polyfuse on keyboard VBUS | Short test trips fuse |
+| FR-022 | 0.9 A / 1.8 A polyfuse (60R090) on keyboard VBUS | Short test trips fuse; no nuisance trip on a 500 mA keyboard |
 | FR-023/024/025 | 2.2 kΩ SPI series R | Any power-up order works |
 | FR-026 | UART 1 kΩ series, no VCC | Adapter can't back-power |
-| FR-030 | Reserved GP9 RST header (unpop.) | Footprint present |
+| FR-030 | Modules' onboard BOOT/RESET buttons kept accessible (placement constraint) | Press both buttons with modules seated; complete a download-mode flash in situ |
 | FR-031 | Per-module UART header | Console works |
 | FR-032 | Power-good LED | LED on with 5 V |
 | FR-033 | USB-C edge access | Mechanical review |
@@ -217,14 +263,23 @@ J_PWR(GND) ───────────────────┴── co
 
 ## Risks and Trade-offs
 
-- **P-FET selection (THT logic-level):** smaller THT selection than SMD; a
-  wrong (non-logic-level) part won't fully enhance at 5 V. Mitigation: specify
-  Vgs(th) and Rds(on)@−4.5 V in the BOM; alternative was a Schottky (rejected —
-  eats voltage margin).
+- **Schottky forward drop eats VBUS margin (accepted):** ~0.3 V at 0.3 A leaves
+  the keyboard at ≈4.6 V vs the 4.40 V USB floor. Accepted in exchange for
+  sourcing a part that actually exists in THT at hobby quantity. Mitigations:
+  run J_PWR at 5.1–5.25 V; diode footprint accepts a lower-Vf SB540/SB560;
+  bring-up explicitly measures loaded VBUS. Residual risk: a keyboard drawing
+  well above 0.3 A (heavy RGB) could push VBUS toward the floor — such a
+  keyboard is already near the polyfuse hold current and is out of scope.
+- **(Superseded) P-FET ideal diode:** electrically better (near-zero drop) but
+  logic-level THT POWER P-FETs proved unsourceable; small-signal TO-92 parts
+  (VP2106/TP2104) are unusable here (ohms of Rds → >1 V drop, overheating).
+  Revisit if the design ever moves to SMD.
 - **Single-sided routing with two 21-pin modules + power:** may need several
   jumpers. Mitigation: place modules to keep SPI + power on the bottom layer;
   budget/document jumpers; the circuit is electrically simple.
 - **No USB ESD on carrier:** data is on the modules; carrier can't add it.
   Accepted for the DIY board; revisit in the product version.
-- **Keyboard current beyond polyfuse hold (RGB):** fuse trips (best-effort per
-  FR5.2); documented.
+- **Keyboard current beyond polyfuse hold (RGB):** largely retired by the 0.9 A
+  revision — a 500 mA keyboard plus the KBD module (~0.58 A) now sits ~29 %
+  below the 40 °C-derated hold current. A keyboard drawing beyond USB's legal
+  500 mA is out of scope and will still trip the fuse (best-effort per FR5.2).

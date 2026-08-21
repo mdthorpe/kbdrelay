@@ -85,6 +85,12 @@ Board def is in-repo (`boards/waveshare_esp32_s3_zero.json`). Firmware is
   effort follows this.
 - Prefer `make …` and other allowlisted commands; the host runs a guardrails
   system that blocks risky raw commands (e.g. `rm -rf` chains).
+- ⚠ **Never interleave raw file edits with Konnect writes on the same KiCad
+  file.** Konnect writes from a cached parse, so a later Konnect write silently
+  reverts hand edits made in between (observed: footprint assignments rolled
+  back to earlier values with no error). Do all Konnect edits first, then any
+  raw edits, then only read-only Konnect calls — and re-read the file to confirm.
+  `kicad_status restart:true` clears the cache.
 - One writer per working tree.
 - Record hardware findings in `~/.pi/memory-md/kbdrelay/core/HARDWARE.md` **and**
   the relevant spec/plan so they aren't lost.
@@ -93,9 +99,98 @@ Board def is in-repo (`boards/waveshare_esp32_s3_zero.json`). Firmware is
 
 ## Current open task (PCB)
 
-Selecting the KBD **reverse-polarity P-FET**: needs a **logic-level POWER P-FET
-in TO-220 THT** — Vgs(th) ≤ 2 V, Rds(on) ≤ ~100 mΩ @ Vgs=−4.5 V, Id ≥ 1 A,
-Vds ≥ −20 V (e.g. Infineon `IPPxxP03P4L` or `NDP6020P`). **Avoid small-signal
-TO-92 parts** (Supertex VP2106 / TP2104 — ohms of Rds, too lossy at ~0.3–0.4 A).
-KiCad symbol `Q_PMOS_GDS`, footprint `Package_TO_SOT_THT:TO-220-3_Vertical`.
-Wiring: Drain→+5 V in, Source→load (+5V_KBD), Gate→100 kΩ→GND.
+**Reverse-polarity part: SETTLED — series Schottky, not a P-FET.** Logic-level
+THT POWER P-FETs proved unsourceable at hobby quantity, so `D1 = 1N5817`
+(1 A / 20 V, DO-41, on hand; 1N5819 drop-in). Symbol `Device:D_Schottky`,
+footprint `Diode_THT:D_DO-201AD_P12.70mm_Horizontal` — the 12.70 mm pitch is
+deliberate so a lower-Vf **SB540/SB560** (DO-201AD) drops in with no respin.
+Wiring: anode→+5 V in, cathode→load (+5V_KBD). The 100 kΩ gate resistor is gone.
+
+⚠ **Cost of the swap:** ~0.3 V Vf at 0.3 A → keyboard VBUS ≈4.6 V from a 5.00 V
+input (USB floor is 4.40 V). Margin is finite now. Prefer a **5.1–5.25 V** feed
+at J_PWR, and bring-up **must measure loaded keyboard VBUS ≥ 4.40 V**.
+
+**Schematic: COMPLETE and ERC-clean (0 errors).** Full capture per design.md —
+power path (J3→D1→C1/C2→F1→U1.5V), SPI GP4–GP8 with 2.2 k series each, both UART
+headers with 1 k series and no VCC, power-good LED, TGT 5V no-connected. Every
+part has a value + footprint; `hardware/pcb-carrier/BOM.md` is generated from it.
+
+**Approved design amendments since the first draft** (all gated individually):
+1. **D1 = 1N5817 series Schottky** replaces the P-FET (sourcing).
+2. **F1 = Littelfuse 60R090** (0.9 A hold / 1.8 A trip, R₁ₘₐₓ 0.47 Ω) replaces the
+   0.5 A part. A 0.5 A PPTC derates to ~0.42 A at 40 °C and would nuisance-trip a
+   legal 500 mA keyboard, and its 1.17 Ω pushed VBUS under the 4.40 V USB floor.
+3. **Shared GP9 soft-reset removed** (J4 + R10/R11 deleted, GP9 now NC both
+   modules). It never satisfied FR-030 — download mode needs the hardware
+   BOOT+RESET sequence, which a firmware `esp_restart()` cannot do. FR-030 is now
+   a **placement constraint**: layout must leave both modules' onboard BOOT/RESET
+   buttons reachable with the modules seated.
+
+**Spec gates:** requirements-approved, design-approved, **tasks-approved**
+(`spec_validate --phase implementation` = 14/14). T-001/T-002/T-003 are done in
+substance but remain unchecked pending their own "Done when" validation.
+
+**Libraries are project-local and self-contained — no blockers left for layout.**
+Both S3-Zero library files live in the repo and resolve via `${KIPRJMOD}`:
+
+| File | Registered by | lib_id |
+|------|---------------|--------|
+| `kbdrelay-carrier/symbols/kbdrelay.kicad_sym` | `sym-lib-table` | `kbdrelay:ESP32-S3-Zero` |
+| `kbdrelay-carrier/footprints/kbdrelay.pretty/ESP32-S3-Zero.kicad_mod` | `fp-lib-table` | `kbdrelay:ESP32-S3-Zero` |
+
+**Source:** <https://github.com/jtomka/kicad-esp32-s3-zero> (the old `MySymbols`
+library on the unmounted `/Volumes/pool-data1_root/...` was a copy of that same
+symbol — verified pin-for-pin identical). ⚠ **That repo ships no LICENSE file**,
+so redistribution terms are unstated; worth asking upstream before publishing.
+Do not reintroduce `MySymbols`.
+
+**Module footprint facts** (supersedes the old "≈1×9 + 1×12" note, which was
+wrong): the S3-Zero is **2×9 = 18 THT pads**, 2.54 mm pitch, **15.24 mm (0.6")
+row spacing**, body 18.06 × 23.53 mm plus a 1.5 mm USB-C overhang notch.
+Upstream pads are 1.524 mm / 0.762 mm drill — **too small for 0.64 mm square
+header pins (0.905 mm diagonal)**. In use is the forked
+`kbdrelay:ESP32-S3-Zero-Socketed` at **2.0 mm pad / 1.0 mm drill**; the upstream
+footprint is kept alongside for direct castellated soldering.
+`kbdrelay:PPTC_Littelfuse_60R_P5.08mm` was likewise hand-built — the stock
+Bourns footprint staggers its pads 1.2 mm for kinked leads, which the Littelfuse
+part does not have.
+
+## PCB layout — IN PROGRESS (T-004)
+
+**Placement done, routing NOT started.** Board is **120 × 55 mm landscape**, per
+the user's sketch (`hardware/v0.1_board_design.png`): modules at the left and
+right edges rotated 90° so USB-C exits each short end (cable straight through),
+components in the middle.
+
+- U1 rot 270 anchor (1.5, 36.53); U2 rot 90 anchor (118.5, 18.47)
+- Top-left: KBD UART (R6/R7 → J1). Bottom-left: power chain J3→D1→F1→U1.VDD,
+  plus C1/C2 and the LED. Middle: SPI resistors. Bottom-right: TGT UART.
+- Deviation from the sketch: **5V In is bottom-left, not top-left**, because
+  U1's VDD/GND land on the bottom row at that end.
+- DRC: 32 unconnected (no routing yet), 4 copper-edge corner artifacts,
+  3 courtyard overlaps in the power cluster (fine for hand-soldered THT).
+
+**Routing plan:** B.Cu only, 1.5 mm power / 0.7 mm signal / 0.4 mm clearance
+(clearance must stay ≤0.5 mm — module pads leave only 0.54 mm between neighbours).
+GND via a pour. **Expect 2 jumpers**, where GP7/GP8 hop the GP4/5/6 bundle near
+U1: the two SPI bundles run in opposite directions across the middle and must
+cross, but one wire link can hop several traces.
+
+⚠ **Earlier claim that zero crossings was "provably impossible" was WRONG** — it
+over-applied an annulus theorem that ignores routing *around* a module. Two
+parked escape hatches if the jumper count ever matters: flip U2 to the back
+layer (mirroring reverses its clockwise pin order), or reverse TGT's SPI pin
+assignment in firmware. Both need the design gate reopened; see tasks.md T-004.
+
+## KiCad tooling notes (hard-won)
+
+- **Konnect schematic + board-file tools are file-based** (they take a path) and
+  need no running KiCad. **Routing tools (`route_trace`, `add_via`, `query_traces`)
+  need KiCad's IPC** — which needs pi launched with
+  `KICAD_API_SOCKET=ipc:///tmp/kicad/api.sock`, since pi-kicad resolves the socket
+  from the environment once at extension load. Not needed so far: tracks can be
+  written directly as `(segment ...)` S-expressions.
+- **`kicad-cli pcb drc` / `sch erc` are file-based** — the reliable way to check
+  work without trusting the tools' own success messages.
+- Close the KiCad editor for the file being edited, or whoever saves last wins.
+- KiCad auto-backups live in `*-backups/` (gitignored) and have saved us once.

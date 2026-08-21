@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "kbdrelay")(type "KiCad")(uri "${KIPRJMOD}/footprints/kbdrelay.pretty")(options "")(descr "kbdrelay project footprints (Waveshare ESP32-S3-Zero)"))
+)
