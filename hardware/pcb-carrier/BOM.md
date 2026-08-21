@@ -33,6 +33,7 @@ must leave accessible. GP9 is unconnected on both modules.)*
 | J3 | 1 | 5V_IN (1×2) | `Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical` | Pin 1 = +5 V, pin 2 = GND. **KBD's only 5 V source.** |
 | J1, J2 | 2 | UART_KBD / UART_TGT (1×3) | `..._PinHeader_1x03_P2.54mm_Vertical` | Pin1 = module TX, pin2 = module RX, pin3 = GND. **No VCC pin — deliberate** (FR-026). |
 | — | 4 | **1×9** female headers, 2.54 mm | (part of the module footprint) | Two per module so the S3-Zeros are removable. Not a schematic symbol. Rows are 15.24 mm (0.6") apart. |
+| H1–H4 | 4 | M3 mounting holes (3.2 mm, non-plated) | `MountingHole:MountingHole_3.2mm_M3` | Board corners, 3.5 mm in. Not a schematic symbol. H3 (bottom-left) sits close to C1's body — use a low-profile screw/washer. |
 
 ## Library provenance
 

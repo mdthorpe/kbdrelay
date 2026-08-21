@@ -99,6 +99,10 @@ Board def is in-repo (`boards/waveshare_esp32_s3_zero.json`). Firmware is
 
 ## Current open task (PCB)
 
+**Next up: T-005** (DRC + walk the design.md traceability table confirming every
+FR is physically present on the board), then T-006 (Gerbers, 1:1 etch print,
+BUILD.md). T-001..T-004 are checked off; layout is complete and DRC-clean.
+
 **Reverse-polarity part: SETTLED — series Schottky, not a P-FET.** Logic-level
 THT POWER P-FETs proved unsourceable at hobby quantity, so `D1 = 1N5817`
 (1 A / 20 V, DO-41, on hand; 1N5819 drop-in). Symbol `Device:D_Schottky`,
@@ -126,9 +130,9 @@ part has a value + footprint; `hardware/pcb-carrier/BOM.md` is generated from it
    a **placement constraint**: layout must leave both modules' onboard BOOT/RESET
    buttons reachable with the modules seated.
 
-**Spec gates:** requirements-approved, design-approved, **tasks-approved**
-(`spec_validate --phase implementation` = 14/14). T-001/T-002/T-003 are done in
-substance but remain unchecked pending their own "Done when" validation.
+**Spec gates:** requirements-approved, design-approved, tasks-approved,
+now **implementation-in-progress**. T-001..T-004 checked off (project +
+libraries, ERC-clean schematic, BOM, and a DRC-clean single-layer layout).
 
 **Libraries are project-local and self-contained — no blockers left for layout.**
 Both S3-Zero library files live in the repo and resolve via `${KIPRJMOD}`:
@@ -155,32 +159,61 @@ footprint is kept alongside for direct castellated soldering.
 Bourns footprint staggers its pads 1.2 mm for kinked leads, which the Littelfuse
 part does not have.
 
-## PCB layout — IN PROGRESS (T-004)
+## PCB layout — T-004 COMPLETE (2026-08-21)
 
-**Placement done, routing NOT started.** Board is **120 × 55 mm landscape**, per
-the user's sketch (`hardware/v0.1_board_design.png`): modules at the left and
-right edges rotated 90° so USB-C exits each short end (cable straight through),
-components in the middle.
+Board is **88 × 55 mm landscape**, per the user's sketch
+(`hardware/v0.1_board_design.png`): modules at the left and right edges so USB-C
+exits each short end (cable straight through), discretes in the middle.
+**100% routed on B.Cu, ZERO jumpers, zero unconnected, DRC-clean** (no
+clearance / short / crossing / copper-edge violations).
 
-- U1 rot 270 anchor (1.5, 36.53); U2 rot 90 anchor (118.5, 18.47)
+**Layout is scripted and idempotent — do not hand-edit the .kicad_pcb.**
+
+| Script | Does |
+|--------|------|
+| `hardware/pcb-carrier/place.py` | placement table, board outline, 4× M3 holes, silkscreen, `BOTTOM` B.Cu label, centres the board on the A4 sheet |
+| `hardware/pcb-carrier/route.py` | strips old routing, maze-routes B.Cu, GND pour + island repair, DRC-safe geometry |
+
+Run both with **KiCad's bundled python**
+(`/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python3`),
+place first, then route (`--attempts=N`, deterministic via `--seed`), then
+`kicad-cli pcb drc`. Re-running regenerates the board from scratch.
+
+- U1 rot **90** anchor (1.5, 36.53); U2 rot **270** anchor (86.5, 18.47), both
+  board-local (board origin is (104.5, 77.5) on the A4 sheet).
 - Top-left: KBD UART (R6/R7 → J1). Bottom-left: power chain J3→D1→F1→U1.VDD,
-  plus C1/C2 and the LED. Middle: SPI resistors. Bottom-right: TGT UART.
+  plus C1/C2 and the LED. Middle: SPI resistors in **one column** at x=45,
+  5 mm pitch. Bottom-right: TGT UART (J2 + R8/R9).
 - Deviation from the sketch: **5V In is bottom-left, not top-left**, because
   U1's VDD/GND land on the bottom row at that end.
-- DRC: 32 unconnected (no routing yet), 4 copper-edge corner artifacts,
-  3 courtyard overlaps in the power cluster (fine for hand-soldered THT).
+- Widths 0.7 mm signal / 1.5 mm power+GND, clearance 0.4 mm (must stay ≤0.5 mm —
+  module pads leave only 0.54 mm between neighbours), 1.0 mm drills / 2.0 mm
+  pads on modules + PPTC.
 
-**Routing plan:** B.Cu only, 1.5 mm power / 0.7 mm signal / 0.4 mm clearance
-(clearance must stay ≤0.5 mm — module pads leave only 0.54 mm between neighbours).
-GND via a pour. **Expect 2 jumpers**, where GP7/GP8 hop the GP4/5/6 bundle near
-U1: the two SPI bundles run in opposite directions across the middle and must
-cross, but one wire link can hop several traces.
+⚠ **The old "zero crossings is provably impossible" claim was WRONG** and is now
+retracted in design.md and tasks.md — it applied an annulus argument that
+ignores routing *around* a module and *under* its body between the two pad rows.
+The board routes with zero crossings, so neither escape hatch (flip U2 to the
+back layer; reverse TGT's SPI pin order in firmware) is needed.
 
-⚠ **Earlier claim that zero crossings was "provably impossible" was WRONG** — it
-over-applied an annulus theorem that ignores routing *around* a module. Two
-parked escape hatches if the jumper count ever matters: flip U2 to the back
-layer (mirroring reverses its clockwise pin order), or reverse TGT's SPI pin
-assignment in firmware. Both need the design gate reopened; see tasks.md T-004.
+### Layout gotchas paid for in blood
+
+- **Module rotation is easy to get backwards.** The original placement had U1/U2
+  rotated 270/90 instead of 90/270, which put *every module pad off the board*
+  (x −20…0 and 122…140 on a 0–120 board) while still looking plausible in the
+  file. Always verify pad positions via pcbnew, not by eye:
+  `p.GetPosition()` is authoritative.
+- **A GND pour silently strands pads.** C1.2, C2.2 and U2.2 each ended up on
+  isolated pour islands once the +5 V / SPI runs walled them off. `route.py`
+  keeps three GND-only keep-clear channels and runs a fill-verify-repair pass;
+  it fails loudly rather than shipping a stranded ground.
+- **Thermal reliefs starved/isolated GND pads** on this single-sided board; the
+  pour uses **solid** pad connections instead.
+- **Rect pads reach √2× further than a circle of the same width.** Pin-1 markers
+  are square, so a circle model under-clears their corners by up to 0.41 mm.
+- **Snapping track ends to pad centres can break clearance** because it moves
+  geometry outside the routing grid model — `route.py` geometry-checks each
+  snapped end and falls back to the grid point.
 
 ## KiCad tooling notes (hard-won)
 
@@ -192,5 +225,17 @@ assignment in firmware. Both need the design gate reopened; see tasks.md T-004.
   written directly as `(segment ...)` S-expressions.
 - **`kicad-cli pcb drc` / `sch erc` are file-based** — the reliable way to check
   work without trusting the tools' own success messages.
+- **KiCad ships a full `pcbnew` Python** at
+  `/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python3`
+  (KiCad 10.0.5). It is far better than Konnect for scripted layout: real pad
+  positions, tracks, zones, `ZONE_FILLER`, `board.Save()`. No running KiCad, no
+  IPC socket.
+- ⚠ **`board.Remove()` corrupts the SWIG proxy registry** — after removing items,
+  later `GetFootprints()` / `FindNet()` calls return bare `SwigPyObject`s with no
+  methods. Workaround used by `place.py`/`route.py`: **delete blocks textually
+  from the .kicad_pcb before `LoadBoard()`**, then only ever `Add()`.
+- Konnect-written board files can carry **name-only nets** (`(net "GND")` with no
+  net table). KiCad tolerates them, but you cannot author tracks against them;
+  loading and re-saving through pcbnew normalises the file.
 - Close the KiCad editor for the file being edited, or whoever saves last wins.
 - KiCad auto-backups live in `*-backups/` (gitignored) and have saved us once.

@@ -225,10 +225,44 @@ J_PWR(GND) ───────────────────────
 
 - **Single copper layer** (bottom) routed in KiCad; components + **wire-jumper
   links** on top; **no plated vias**. Target **≤ ~8 jumpers**, each listed in
-  build notes (NFR-001, NFR-006).
+  build notes (NFR-001, NFR-006). **Achieved: zero jumpers** — see the layout
+  amendment below.
 - **Home-fab profile (starting targets, finalized in layout):** signal traces
   ~0.5 mm, power traces ~1.0 mm, clearance ~0.5 mm, drills ~0.9 mm with generous
   ~2 mm pads.
+- **As-routed profile:** signal 0.7 mm, power/GND 1.5 mm, clearance 0.4 mm,
+  module + PPTC drills 1.0 mm / 2.0 mm pads, all other parts library default.
+
+### Layout amendment (2026-08-21) — as-built placement
+
+Approved deviations recorded here per the "record deviations before
+implementing" rule:
+
+1. **Board is 88 × 55 mm, not 120 × 55 mm.** The first placement left ~30 mm of
+   dead space between the middle cluster and the modules. Width came out of
+   whitespace only; the arrangement from the user's sketch (modules at the short
+   edges, USB-C exiting each end, discretes in the middle) is unchanged.
+2. **The five SPI series resistors are one column, not two banks.** R1–R5 sit at
+   x = 45 mm on a 5 mm row pitch (y = 34/29/24/19/14). The two-bank arrangement
+   existed only to span the wider board and cost ~20 mm of width.
+3. **TGT UART cluster moved with U2** (J2 at x = 60, R8/R9 rotated 180° so their
+   module-side pad faces U2).
+4. **The board is placed centred on the A4 drawing sheet** (origin 104.5, 77.5)
+   rather than at the sheet origin, so the title block frames the board.
+5. **4× M3 mounting holes** at the board corners, 3.5 mm in. The bottom-left
+   hole's courtyard clips C1's body outline — mechanically fine, but use a
+   low-profile screw/washer there.
+6. **GND is a B.Cu pour with solid (not thermal-relief) pad connections**, plus
+   three GND-only keep-clear channels. Without those channels the pour cannot
+   reach C1.2, C2.2 and U2.2 once the +5 V and SPI runs wall them off — a
+   silent, real fault that a pour alone hides.
+
+**The "≥1 jumper is topologically forced" claim in tasks.md T-004 is wrong.**
+It applied an annulus argument that ignores routing *around* a module and
+*under* a module body between its two pad rows. The board routes with **zero
+crossings on one layer**, so neither parked escape hatch (flipping U2 to the
+back layer, or reversing TGT's SPI pin assignment in firmware) is needed, and
+the design gate does not need reopening.
 - **Outputs:** KiCad project, a 1:1 bottom-copper print for toner-transfer/home
   etch, and standard Gerbers for a PCB house.
 - **BOM (all THT):** 1N5817 Schottky (SB540 alternate), 60R090 PPTC, 470 µF,

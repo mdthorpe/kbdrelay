@@ -1,7 +1,7 @@
 # Pcb Carrier Board Tasks
 
 Spec: `pcb-carrier-board`
-Status: tasks-approved
+Status: implementation-in-progress
 Created: 2026-08-18
 Brainstorm: `./brainstorm.md`
 Requirements: `./requirements.md`
@@ -13,7 +13,7 @@ Ordered, independently-checkable PCB tasks traced to requirement IDs. "Done
 when" is the concrete check for each. Board is designed in KiCad, single-sided
 (bottom copper), all-THT discretes, two socketed S3-Zero modules.
 
-- [ ] 1. KiCad project + library setup  *(work complete; awaiting gate approval)*
+- [x] 1. KiCad project + library setup  *(work complete; awaiting gate approval)*
   - ID: T-001
   - Requirement(s): NFR-001, NFR-002
   - Files/areas: `hardware/pcb-carrier/` (new KiCad project in-repo)
@@ -39,7 +39,7 @@ when" is the concrete check for each. Board is designed in KiCad, single-sided
   - Done when: project opens; S3-Zero footprint + all discrete footprints exist
     and match real parts (pin count/pitch/pad size confirmed against datasheets).
 
-- [ ] 2. Schematic capture
+- [x] 2. Schematic capture
   - ID: T-002
   - Requirement(s): FR-001..FR-005, FR-010..FR-013, FR-020..FR-026, FR-030..FR-033
   - Files/areas: KiCad schematic
@@ -56,7 +56,7 @@ when" is the concrete check for each. Board is designed in KiCad, single-sided
     of GP4–GP8, and both UART headers had no series resistors. Remaining ERC
     warnings are a headless-daemon library-path artifact, not design issues.
 
-- [ ] 3. Footprints + BOM finalization
+- [x] 3. Footprints + BOM finalization
   - ID: T-003
   - Requirement(s): NFR-002, NFR-004
   - Files/areas: KiCad symbols↔footprints, `hardware/pcb-carrier/BOM.md`
@@ -82,7 +82,7 @@ when" is the concrete check for each. Board is designed in KiCad, single-sided
     (VBUS 4.51 V ✓) but 0.67 V at a max-draw 0.58 A (VBUS **4.33 V ✗**).
     Feeding J3 at **5.1–5.25 V** remains recommended. See BOM.md.
 
-- [ ] 4. Single-sided layout + routing
+- [x] 4. Single-sided layout + routing
   - ID: T-004
   - Requirement(s): FR-033, NFR-001, NFR-005, NFR-006
   - Files/areas: KiCad PCB
@@ -99,21 +99,17 @@ when" is the concrete check for each. Board is designed in KiCad, single-sided
     pin rows no longer face each other, so the straight pin-to-pin SPI runs from
     the schematic will need real routing and may raise the jumper count. The
     ≤~8 jumper figure is an estimate, never validated against a placement.
-  - **A crossing-free SPI link is topologically impossible as specified.** Both
-    modules present the SPI pins in the same clockwise order (GP8→GP7→GP6→GP5
-    →GP4); crossing-free routing between two parts needs one read clockwise and
-    the other counter-clockwise. Rotation preserves handedness, so no placement
-    fixes it — **≥1 jumper is forced.** SPI is the only inter-module bundle
-    (GND → pour, power is U1-local, UART is module-local), so jumper count is
-    driven entirely by these five nets.
-  - Two escape hatches if the jumper count turns out badly, **both parked**:
-    (a) **flip U2 to the back layer** — mirroring reverses its clockwise order
-    and makes zero-crossing SPI possible, at the cost of the mounting scheme and
-    TGT button/LED access; (b) reverse TGT's SPI pin assignment in firmware
-    (SCK→GP8 … DATA_READY→GP4), same topological effect, costs a firmware change
-    and the KBD/TGT pin symmetry. Either would need the design gate reopened.
-  - Layout is done **by hand by the user**; the agent reviews, runs DRC, and
-    reasons about results rather than auto-placing.
+  - ~~**A crossing-free SPI link is topologically impossible as specified.**~~
+    **RETRACTED 2026-08-21 — the board routes with zero crossings.** The
+    argument treated each module as a closed annulus and ignored routing
+    *around* the module and *under* its body between the two pad rows. Both
+    escape hatches (flip U2 to the back layer; reverse TGT's SPI pin order in
+    firmware) are therefore **unnecessary** and the design gate stays closed.
+  - Layout is scripted and reproducible: `hardware/pcb-carrier/place.py`
+    (placement, outline, mounting holes, silkscreen, sheet centering) then
+    `hardware/pcb-carrier/route.py` (single-layer maze router + GND pour).
+    Both run under KiCad's bundled pcbnew Python and are idempotent — re-running
+    them regenerates the board from scratch. The user reviews the result.
   - **FR-030 is now a placement constraint, not a circuit:** the shared GP9
     soft-reset (J4 + R10/R11) was removed by design amendment, so layout SHALL
     leave **both modules' onboard BOOT and RESET buttons operable with the
@@ -130,6 +126,25 @@ when" is the concrete check for each. Board is designed in KiCad, single-sided
     the board edges (FR-033).
   - Done when: 100% routed on one layer with jumpers listed; matches the home-fab
     trace/space/drill profile; USB-C ports clear the outline.
+  - **Status: done (2026-08-21).** Board **88 × 55 mm** (was 120 × 55 — see the
+    layout amendment in design.md), **100% routed on B.Cu, zero jumpers, zero
+    unconnected**, and `kicad-cli pcb drc` reports **no clearance, short,
+    crossing or copper-edge violations**. Widths 0.7 mm signal / 1.5 mm power +
+    GND, clearance 0.4 mm. GND is a B.Cu pour with solid pad connections and
+    three keep-clear channels (C1.2, C2.2, U2.2 would otherwise be stranded on
+    pour islands). 4× M3 holes, silkscreen labels, and the mirrored `BOTTOM`
+    B.Cu label are placed; the board is centred on the A4 sheet.
+  - **Bug found and fixed while picking this up:** both modules were placed
+    *off the board* (U1 pads at x −20…0, U2 at 122…140 on a 0–120 board). The
+    anchors were correct; the rotations were inverted (U1 had 270° where it
+    needs 90°, U2 the reverse). The old DRC's "4 copper-edge corner artifacts"
+    were this. Every discrete had been placed around the *intended* pad grid,
+    so only the two rotations needed correcting.
+  - Remaining DRC output is cosmetic/expected: 6× silk clipped by board edge
+    (the intentional USB-C overhang notches), 4× courtyard overlap in the dense
+    THT power cluster, 1× silk overlap (F1 ref vs C1 body), and 13×
+    `lib_footprint_mismatch` (board copies differ from library copies; predates
+    this work, not fabrication-relevant).
 
 - [ ] 5. DRC + design review vs traceability
   - ID: T-005
