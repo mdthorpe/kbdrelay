@@ -25,6 +25,24 @@ fp-info-cache
 # per-user local project state (uncomment to ignore if it churns):
 *.kicad_prl
 
+# Fab outputs belong in hardware/pcb-carrier/fab/ ONLY. KiCad's GUI defaults to
+# writing them next to the project file, which silently creates a second, stale
+# copy of the Gerbers -- exactly how someone etches the wrong artwork later.
+# The project's plot output directory is set to ../fab/gerbers/, but ignore the
+# old location too so a stray export can never be committed.
+hardware/pcb-carrier/kbdrelay-carrier/*.gbr
+hardware/pcb-carrier/kbdrelay-carrier/*.gbrjob
+hardware/pcb-carrier/kbdrelay-carrier/*.drl
+hardware/pcb-carrier/kbdrelay-carrier/*.gbl
+hardware/pcb-carrier/kbdrelay-carrier/*.gtl
+hardware/pcb-carrier/kbdrelay-carrier/*.gto
+hardware/pcb-carrier/kbdrelay-carrier/*.gbo
+hardware/pcb-carrier/kbdrelay-carrier/*.gts
+hardware/pcb-carrier/kbdrelay-carrier/*.gbs
+hardware/pcb-carrier/kbdrelay-carrier/*.gm1
+hardware/pcb-carrier/kbdrelay-carrier/*.ps
+hardware/pcb-carrier/kbdrelay-carrier/*.pdf
+
 # editor swap files
 *.swp
 *.swo
