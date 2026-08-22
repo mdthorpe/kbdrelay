@@ -64,6 +64,31 @@ inside-out and every part will be on the wrong side. Bin it and re-transfer.
   outline measuring 88.09 × 55.10 mm.
 - Regenerate with the recipe in `make_lcd_art.sh`.
 
+### Clearance / etch tolerance
+
+Two independent knobs, both on `route.py`:
+
+| Flag | Default | Effect |
+|------|---------|--------|
+| `--zone-clearance=` | **0.8 mm** | Gap from the GND pour to every trace and pad. **Free tolerance** — raising it only makes the fill retreat, routing is untouched. |
+| `--clearance=` | **0.5 mm** | Trace-to-trace and trace-to-pad gap. Costs routability; still routes with zero jumpers at 0.5. |
+
+As-built minimum copper gaps (measured on the board, real pad shapes):
+
+| Feature | Gap |
+|---------|-----|
+| Pour to anything | 0.80 mm |
+| Trace to trace | 0.70 mm |
+| Trace to pad (different nets) | 0.52 mm |
+| **Pad to pad — adjacent module pins** | **0.54 mm ← tightest feature on the board** |
+
+**0.54 mm is the number your process has to resolve**, and no clearance setting
+can improve it: it is fixed geometry (2.54 mm pin pitch minus 2.0 mm pads). If
+that gap turns out to be marginal in practice, the lever is the module pad
+diameter in `footprints/kbdrelay.pretty/ESP32-S3-Zero-Socketed.kicad_mod` —
+2.0 mm → 1.8 mm buys 0.74 mm of gap, at the cost of dropping the annular ring
+from 0.5 mm to 0.4 mm on a 1.0 mm drill.
+
 ---
 
 ## 2. Drilling

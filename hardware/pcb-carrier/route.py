@@ -22,7 +22,11 @@ ATTEMPTS = int(next((a.split("=")[1] for a in sys.argv if a.startswith("--attemp
 SEED = int(next((a.split("=")[1] for a in sys.argv if a.startswith("--seed=")), 7))
 
 GRID = 0.2      # mm routing grid
-CLR = 0.4       # mm copper-to-copper clearance
+CLR = float(next((a.split("=")[1] for a in sys.argv if a.startswith("--clearance=")), 0.5))
+# Pour-to-everything gap. Independent of routing: raising it only makes the GND
+# fill retreat, so it buys etch/exposure tolerance for free. Routing clearance
+# (CLR) is capped near 0.5 mm because adjacent module pads are only 0.54 mm apart.
+ZONE_CLR = float(next((a.split("=")[1] for a in sys.argv if a.startswith("--zone-clearance=")), 0.8))
 EDGE = 1.45     # mm keep-out for grid cell centres (0.5 rule + widest trace/2 + margin)
 W_SIG = 0.7
 W_PWR = 1.5
@@ -83,7 +87,8 @@ X1, Y1 = pcbnew.ToMM(_bb.GetRight()), pcbnew.ToMM(_bb.GetBottom())
 BX, BY = X1 - X0, Y1 - Y0
 NX, NY = int(BX / GRID) + 1, int(BY / GRID) + 1
 GND_CHANNELS = [(x0 + X0, y0 + Y0, x1 + X0, y1 + Y0) for (x0, y0, x1, y1) in GND_CHANNELS_LOCAL]
-print("board %.1f x %.1f mm at (%.1f, %.1f)" % (BX, BY, X0, Y0))
+print("board %.1f x %.1f mm at (%.1f, %.1f); clearance %.2f mm, pour clearance %.2f mm"
+      % (BX, BY, X0, Y0, CLR, ZONE_CLR))
 
 def cx(i):
     return X0 + i * GRID
@@ -205,6 +210,9 @@ def fresh_grid():
     G = dict((w, fresh_grid_w(w)) for w in WIDTHS)
     gnd_nc = next((p["nc"] for p in pads if p["net"] == POUR_NET), 0)
     for (x0, y0, x1, y1) in GND_CHANNELS:
+        # widen channels so a pour neck survives the larger zone clearance
+        pad_extra = max(0.0, ZONE_CLR - 0.4)
+        x0, x1 = x0 - pad_extra, x1 + pad_extra
         for i in range(max(0, int((x0 - X0) / GRID)), min(NX - 1, int((x1 - X0) / GRID)) + 1):
             for j in range(max(0, int((y0 - Y0) / GRID)), min(NY - 1, int((y1 - Y0) / GRID)) + 1):
                 for w in WIDTHS:
@@ -434,7 +442,7 @@ def emit(tracks):
         z = pcbnew.ZONE(bd)
         z.SetLayer(pcbnew.B_Cu)
         z.SetNetCode(GND_NC)
-        z.SetLocalClearance(mm(CLR))
+        z.SetLocalClearance(mm(ZONE_CLR))
         z.SetMinThickness(mm(0.3))
         z.SetThermalReliefGap(mm(0.4))
         z.SetThermalReliefSpokeWidth(mm(0.8))
