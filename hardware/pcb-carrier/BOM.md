@@ -35,6 +35,38 @@ must leave accessible. GP9 is unconnected on both modules.)*
 | — | 4 | **1×9** female headers, 2.54 mm | (part of the module footprint) | Two per module so the S3-Zeros are removable. Not a schematic symbol. Rows are 15.24 mm (0.6") apart. |
 | H1–H4 | 4 | M3 mounting holes (3.2 mm, non-plated) | `MountingHole:MountingHole_3.2mm_M3` | Board corners, 3.5 mm in. Not a schematic symbol. H3 (bottom-left) sits close to C1's body — use a low-profile screw/washer. |
 
+## Purchasing table
+
+Quantities are per board. Every board-mounted item is **through-hole**; there
+are no surface-mount parts. Part numbers marked *(rep.)* are representative
+jellybean MPNs — any equivalent from a reputable maker is fine. Part numbers in
+**bold** are design-critical: substitute only per the notes in this file.
+
+| Line# | Qty per P/N | Reference Designator | Part Number | Part Description | Package | Type |
+|------:|------------:|----------------------|-------------|------------------|---------|------|
+| 1 | 2 | U1, U2 | Waveshare ESP32-S3-Zero | ESP32-S3FH4R2 module, USB-C, 2×9 castellated/THT pads | Module, 18.06 × 23.53 mm, 2×9 @ 2.54 mm, 15.24 mm rows | Thru-hole (socketed) |
+| 2 | 1 | D1 | **1N5817** | Schottky rectifier, 1 A / 20 V, reverse-polarity protection | DO-41 (board pads are DO-201AD, 12.70 mm pitch) | Thru-hole |
+| 3 | 1 | D2 | WP7113ID *(rep.)* | LED, 5 mm, any colour — power-good indicator | LED 5 mm radial, 2.54 mm pitch | Thru-hole |
+| 4 | 1 | C1 | UVR1C471MPD *(rep.)* | Aluminium electrolytic capacitor, 470 µF / 16 V — inrush bulk | Radial, D10.0 mm, 5.00 mm pitch | Thru-hole |
+| 5 | 1 | C2 | K104K15X7RF5TL2 *(rep.)* | Ceramic capacitor, 100 nF / 50 V, X7R — HF decoupling | Disc, D5.0 mm, 5.00 mm pitch | Thru-hole |
+| 6 | 1 | F1 | **60R090XU** (Littelfuse) | PPTC resettable fuse, 0.90 A hold / 1.80 A trip, 60 V, R₁ₘₐₓ 0.47 Ω | Radial, 11.2 × 3.1 mm body, 5.08 mm pitch | Thru-hole |
+| 7 | 5 | R1, R2, R3, R4, R5 | CFR-25JB-52-2K2 *(rep.)* | Resistor, 2.2 kΩ ±5 %, 1/4 W carbon film — SPI series | Axial DIN0207, 10.16 mm pitch | Thru-hole |
+| 8 | 5 | R6, R7, R8, R9, R12 | CFR-25JB-52-1K0 *(rep.)* | Resistor, 1 kΩ ±5 %, 1/4 W carbon film — UART series (R6–R9), LED limit (R12) | Axial DIN0207, 10.16 mm pitch | Thru-hole |
+| 9 | 1 | J3 | PH1-02-UA *(rep.)* | Pin header, 1×2, 2.54 mm, vertical — 5 V input | THT header, 1×2 @ 2.54 mm | Thru-hole |
+| 10 | 2 | J1, J2 | PH1-03-UA *(rep.)* | Pin header, 1×3, 2.54 mm, vertical — debug UART (TX/RX/GND, no VCC) | THT header, 1×3 @ 2.54 mm | Thru-hole |
+| 11 | 4 | (U1, U2 sockets) | PPTC091LFBN-RC *(rep.)* | Female header, 1×9, 2.54 mm — module sockets, 2 per module | THT socket strip, 1×9 @ 2.54 mm | Thru-hole |
+| 12 | 4 | (U1, U2 pins) | PREC009SAAN-RC *(rep.)* | Male pin header, 1×9, 2.54 mm — soldered into the modules' pad rows | THT header strip, 1×9 @ 2.54 mm | Thru-hole |
+| 13 | 4 | H1, H2, H3, H4 | M3×8 pan head + nut *(rep.)* | Mounting hardware, M3 — board corner holes (3.2 mm NPTH) | M3 screw / nut | Hardware (not soldered) |
+
+**Notes on the two module lines (11 and 12):** the S3-Zeros are socketed, not
+soldered, so each module needs a 1×9 male strip in each of its two pad rows
+(line 12) mating with a 1×9 female strip on the carrier (line 11) — 4 strips of
+each per board. Board holes are drilled 1.0 mm so a 0.64 mm square pin
+(0.905 mm diagonal) passes.
+
+**H3 caveat:** the bottom-left M3 hole sits close to C1's body — use a
+low-profile screw head or a washer-free fixing there.
+
 ## Library provenance
 
 The ESP32-S3-Zero symbol and footprint come from
