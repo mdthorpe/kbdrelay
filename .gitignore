@@ -43,6 +43,27 @@ hardware/pcb-carrier/kbdrelay-carrier/*.gm1
 hardware/pcb-carrier/kbdrelay-carrier/*.ps
 hardware/pcb-carrier/kbdrelay-carrier/*.pdf
 
+# KiCad generated reports / intermediates (regenerate, never review)
+*.rpt
+*.net
+*-cache.lib
+*.000
+sym-lib-table-bak
+fp-lib-table-bak
+# Freerouting round-trip files
+*.dsn
+*.ses
+# 3D and packaged fab exports (large, regenerable; fab/ holds what we ship)
+*.step
+*.stp
+*.wrl
+*.zip
+
+# Python (the layout scripts are plain scripts, but imports leave caches)
+__pycache__/
+*.pyc
+.venv/
+
 # editor swap files
 *.swp
 *.swo
