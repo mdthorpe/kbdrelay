@@ -124,9 +124,16 @@ Use stable IDs and testable EARS-style statements.
   sequence.
 - **FR-031**: THE carrier SHALL expose each module's UART0 (TX/RX) and GND on a
   labeled header for console/debug.
-- **FR-032**: THE carrier SHALL provide a power-good/5 V-present indication
-  (e.g., an LED on the KBD 5 V rail). (Per-role status is already shown by each
-  module's onboard WS2812; no additional status LEDs are required.)
+- ~~**FR-032**: THE carrier SHALL provide a power-good/5 V-present
+  indication.~~ **WITHDRAWN (amendment 2026-08-22).** Each module's onboard
+  WS2812 already shows status under the v1 firmware, so a carrier LED is
+  redundant once a module is seated. Removing D2 + R12 deletes two parts, four
+  drilled holes and several tight copper features from the most congested
+  corner of the board, which directly serves NFR-007.
+  **Accepted cost:** there is no longer any *bare-board* power indication, so
+  the T-007 rail check becomes meter-only. This is not a real loss — a meter
+  reports the actual voltage, which the bring-up procedure requires anyway
+  (VBUS ≥ 4.40 V), whereas an LED only reports "something is live".
 - **FR-033**: THE carrier SHALL keep both module USB-C ports edge-accessible for
   cabling.
 
@@ -151,6 +158,17 @@ Use stable IDs and testable EARS-style statements.
   board.
 - **NFR-005** (electrical margin): SPI series resistance and bulk capacitance
   SHALL be chosen so SPI still operates reliably at ≤1 MHz.
+- **NFR-007** (etch robustness, amendment 2026-08-22): THE minimum copper gap
+  anywhere on the board SHALL be **≥ 0.8 mm**, including between adjacent
+  module pin pads, so the resist develops and the board etches clean without
+  over-etching and thinning the traces. Where a 2.54 mm pin pitch cannot meet
+  this with round pads, pad geometry SHALL be changed (e.g. oval pads narrow
+  along the pin row) rather than accepting a tighter gap. Annular ring MAY be
+  reduced to achieve this but SHALL remain sufficient to survive hand drilling
+  (target ≥ 0.3 mm on the narrow axis).
+- **NFR-008** (stock size, amendment 2026-08-22): THE finished board outline
+  SHALL fit within **90 × 60 mm**, being a 100 × 70 mm copper sheet less a 5 mm
+  working margin on every edge.
 
 ## Acceptance Criteria
 
@@ -172,6 +190,11 @@ Use stable IDs and testable EARS-style statements.
   plated-through vias, meets the stated home-fab trace/space/drill profile, and
   exports valid fabrication artifacts (Gerbers and/or a 1:1 etch print); BOM is
   all THT (except modules).
+
+- [ ] **AC-7 (NFR-007)**: A copper-gap audit of the finished layout reports no
+  gap below 0.8 mm anywhere, including adjacent module pins, and an etched
+  board shows fully cleared channels with no visibly thinned or broken traces.
+- [ ] **AC-8 (NFR-008)**: The board outline measures ≤ 90 × 60 mm.
 
 ## Edge Cases
 
