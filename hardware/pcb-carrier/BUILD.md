@@ -89,6 +89,39 @@ diameter in `footprints/kbdrelay.pretty/ESP32-S3-Zero-Socketed.kicad_mod` —
 2.0 mm → 1.8 mm buys 0.74 mm of gap, at the cost of dropping the annular ring
 from 0.5 mm to 0.4 mm on a 1.0 mm drill.
 
+### Where a bad etch actually hurts
+
+All 32 of the tightest gaps on this board are between adjacent module pins
+(0.54 mm). **Only 9 of them matter electrically** — the rest are next to pins
+that are unconnected on the carrier, where a bridge is harmless. Regenerate this
+list with `bridge_risk.py`.
+
+Inspect these nine under magnification, and meter them **before** seating any
+module:
+
+| Pair | Nets | If bridged |
+|------|------|-----------|
+| U1.1 – U1.2 | +5V_KBD / GND | **dead short of the 5 V rail** |
+| U1.7 – U1.8 | SCK / MOSI | SPI link dead |
+| U1.8 – U1.9 | MOSI / MISO | SPI link dead |
+| U1.10 – U1.11 | CS / DATA_READY | SPI link dead |
+| U1.17 – U1.18 | KBD UART RX / TX | console dead |
+| U2.7 – U2.8 | SCK / MOSI | SPI link dead |
+| U2.8 – U2.9 | MOSI / MISO | SPI link dead |
+| U2.10 – U2.11 | CS / DATA_READY | SPI link dead |
+| U2.17 – U2.18 | TGT UART RX / TX | console dead |
+
+Good news on the one that could damage the target: **U2.1 (the TGT module's 5 V
+pin) is unconnected on the carrier**, so a bridge from it to U2.2 (GND) shorts
+nothing while the board is bare. It does, however, become a path from the
+*target's* USB 5 V to GND once the module is seated — so U2.1–U2.2 is still
+worth a meter check before you plug into anything you care about.
+
+If bridging turns out to be the recurring failure, the lever is shrinking the
+**unconnected** module pads (U1: 3,4,5,6,12–16; U2: 1,3,4,5,6,12–16) — they are
+mechanical only, so their pads can drop to ~1.7 mm and widen those gaps to
+~0.69 mm at zero electrical cost.
+
 ---
 
 ## 2. Drilling

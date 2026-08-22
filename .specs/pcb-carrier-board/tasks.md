@@ -156,7 +156,7 @@ when" is the concrete check for each. Board is designed in KiCad, single-sided
     TGT.5V unconnected, UART series R).
   - Done when: **DRC passes**; every traceability row visually verified on-board.
 
-- [ ] 6. Fabrication outputs + build notes
+- [x] 6. Fabrication outputs + build notes
   - ID: T-006
   - Requirement(s): NFR-001, NFR-004, NFR-006
   - Files/areas: `hardware/pcb-carrier/fab/` (Gerbers), 1:1 etch print, `BUILD.md`

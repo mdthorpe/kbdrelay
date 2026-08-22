@@ -5,7 +5,7 @@
       "Application": "Pcbnew",
       "Version": "10.0.5"
     },
-    "CreationDate": "2026-08-21T12:39:19-07:00"
+    "CreationDate": "2026-08-22T10:36:50-07:00"
   },
   "GeneralSpecs": {
     "ProjectId": {
@@ -28,15 +28,50 @@
       "PadToTrack": 0.25,
       "TrackToTrack": 0.4,
       "MinLineWidth": 0.7,
-      "TrackToRegion": 0.4,
-      "RegionToRegion": 0.4
+      "TrackToRegion": 0.8,
+      "RegionToRegion": 0.8
     }
   ],
   "FilesAttributes": [
     {
+      "Path": "kbdrelay-carrier-F_Cu.gbr",
+      "FileFunction": "Copper,L1,Top",
+      "FilePolarity": "Positive"
+    },
+    {
       "Path": "kbdrelay-carrier-B_Cu.gbr",
       "FileFunction": "Copper,L2,Bot",
       "FilePolarity": "Positive"
+    },
+    {
+      "Path": "kbdrelay-carrier-F_Paste.gbr",
+      "FileFunction": "SolderPaste,Top",
+      "FilePolarity": "Positive"
+    },
+    {
+      "Path": "kbdrelay-carrier-B_Paste.gbr",
+      "FileFunction": "SolderPaste,Bot",
+      "FilePolarity": "Positive"
+    },
+    {
+      "Path": "kbdrelay-carrier-F_Silkscreen.gbr",
+      "FileFunction": "Legend,Top",
+      "FilePolarity": "Positive"
+    },
+    {
+      "Path": "kbdrelay-carrier-B_Silkscreen.gbr",
+      "FileFunction": "Legend,Bot",
+      "FilePolarity": "Positive"
+    },
+    {
+      "Path": "kbdrelay-carrier-F_Mask.gbr",
+      "FileFunction": "SolderMask,Top",
+      "FilePolarity": "Negative"
+    },
+    {
+      "Path": "kbdrelay-carrier-B_Mask.gbr",
+      "FileFunction": "SolderMask,Bot",
+      "FilePolarity": "Negative"
     },
     {
       "Path": "kbdrelay-carrier-Edge_Cuts.gbr",
