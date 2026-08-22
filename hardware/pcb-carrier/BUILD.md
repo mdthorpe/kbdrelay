@@ -21,6 +21,7 @@ Everything is in `fab/`:
 | `print/drill-guide.pdf` | Bottom copper + top silk + actual drill shapes — use to find hole centres. |
 | `print/assembly-top-silk.pdf` | Component placement / silkscreen, for stuffing the board. |
 | `gerbers/` | Standard Gerbers + Excellon drill (+ drill map) if you'd rather order it. |
+| `lcd/` | **LCD/photoresist exposure bitmaps** at the Elegoo Mars 4 Ultra's native panel resolution — see below. |
 
 **Print at 100 % / "actual size" — no fit-to-page.** The PDFs are 1:1 on A4.
 Sanity check after printing: the board outline must measure **88.0 × 55.0 mm**
@@ -32,6 +33,36 @@ There is a `BOTTOM` text item in copper near the lower middle of the board. Once
 etched, **hold the board copper-side towards you: it must read `BOTTOM`
 correctly.** If it reads mirrored, the artwork was flipped — the whole board is
 inside-out and every part will be on the wrong side. Bin it and re-transfer.
+
+### LCD exposure (Elegoo Mars 4 Ultra)
+
+| File | Size | Notes |
+|------|------|-------|
+| `lcd/kbdrelay-carrier_B.Cu_LCD_8520x4320.png` | 8520 × 4320 | **Use this one.** Full panel, board centred. |
+| `lcd/..._LCD_8520x4320_MIRRORED.png` | 8520 × 4320 | Same, flipped in X — only if your workflow needs the other handedness. |
+| `lcd/..._boardonly_4889x3056.png` | 4889 × 3056 | Board area only, same pitch, for re-compositing. |
+
+- Panel geometry assumed: **8520 × 4320 px over 153.36 × 77.76 mm = exactly
+  18.0 µm/px**. The board is 4889 × 3056 px, so it fits with ~32 mm spare in X
+  and ~11 mm in Y.
+- **White = copper.** Drawn for **negative-acting dry film**: UV hardens the
+  resist, hardened resist protects the copper, so white is the copper you keep.
+  Only the thin black isolation channels are etched — 0.4 mm clearance is 22 px,
+  so there is plenty of margin at this pitch. **If your resist is
+  positive-acting, invert it** (`magick in.png -negate out.png`).
+- **Pad centres are solid copper — no drill knockouts.** Generated with
+  `--drill-shape-opt 0` on purpose: KiCad's default plots the hole, which would
+  etch out every pad centre and leave a 0.5 mm ring with nothing to guide the
+  drill bit.
+- **Handedness check.** The board is exposed copper-side-down on the panel, so
+  the on-screen image is what you see from the copper side after flipping. With
+  the recommended un-mirrored file the `BOTTOM` label reads **backwards in the
+  slicer preview** and correctly on the finished copper. If it reads correctly
+  on screen, you have the mirrored file loaded.
+- Registration is computed, not eyeballed: cropped from a 1411 dpi render at the
+  board's known sheet origin (104.5, 77.5 mm), verified against the plotted
+  outline measuring 88.09 × 55.10 mm.
+- Regenerate with the recipe in `make_lcd_art.sh`.
 
 ---
 
