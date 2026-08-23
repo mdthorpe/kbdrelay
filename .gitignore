@@ -70,3 +70,6 @@ __pycache__/
 
 # agent scratch snapshots
 .agent-snapshots/
+
+# throwaway layout probes (never committed)
+.probe/

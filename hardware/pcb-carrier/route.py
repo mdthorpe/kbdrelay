@@ -39,6 +39,28 @@ GND_CHANNELS_LOCAL = [(11.9, 48.5, 14.1, 54.0),    # C1.2 down to the bottom pou
                       (81.0, 1.5, 83.6, 20.0)]     # U2.2 up to the top pour
 POUR_NET = "GND"
 
+# ---------------------------------------------------------------- safety gate
+# The hand-routed board (kbdrelay-carrier-test2) beats anything this router
+# produces: it reaches 1.0 mm traces with ZERO jumpers, where the router needs
+# 1-2 jumpers at the same clearance. Re-running this script strips all existing
+# routing first, so pointing it at a hand-routed board silently destroys work.
+def _guard(path):
+    if "--force" in sys.argv:
+        return
+    try:
+        txt = open(path).read()
+    except OSError:
+        return
+    n = txt.count("(segment")
+    if n:
+        sys.exit(
+            "refusing to run: %s already contains %d routed segments.\n"
+            "route.py STRIPS all routing and re-routes from scratch, which will\n"
+            "destroy any hand routing. Re-run with --force if that is really what\n"
+            "you want (make a copy first)." % (path, n))
+
+_guard(PCB)
+
 def strip_routing(path):
     """Textually remove existing tracks/vias/zones so the script is re-runnable.
     (pcbnew's board.Remove() corrupts the SWIG proxy registry, so we do it on
