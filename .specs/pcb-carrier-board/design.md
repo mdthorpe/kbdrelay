@@ -1,7 +1,7 @@
 # Pcb Carrier Board Design
 
 Spec: `pcb-carrier-board`
-Status: design-approved
+Status: design-draft
 Created: 2026-08-18
 Brainstorm: `./brainstorm.md`
 Requirements: `./requirements.md`
@@ -269,6 +269,69 @@ the design gate does not need reopening.
   0.1 µF, 5× 2.2 k (SPI), 4× 1 k (UART), LED + 1 k, J_PWR (1×2),
   2× UART (1×3), module socket headers. Board outline + 4× M3 holes.
 
+### Design amendment 2 (2026-08-22) — etch robustness (NFR-007, NFR-008, FR-032 withdrawn)
+
+Everything here was probed on a throwaway copy of the board before being
+written down; the numbers are measured, not estimated.
+
+**1. Module pad geometry — the whole point of this amendment.**
+All 32 of the board's tightest gaps were between adjacent module pins at
+0.54 mm. Round pads cannot fix this at 2.54 mm pitch, so the pads become
+oval — narrow along the pin row where the gap is needed, tall across it where
+there is 15.24 mm of free space:
+
+| Pads | Shape | Size | Drill | Annular ring | Gap to neighbour |
+|------|-------|------|-------|--------------|------------------|
+| Module pins **in use** (17) | oval | 1.70 × 2.60 mm | 1.0 mm | **0.35 mm** narrow / 0.80 mm long | **0.84 mm** |
+| Module pins **unused** (19) | round | 1.60 mm | 1.0 mm | **0.30 mm** | 0.89–0.94 mm |
+| Everything else | unchanged | — | — | — | ≥ 0.8 mm |
+
+Drill stays 1.0 mm: a 0.64 mm square header pin has a 0.905 mm diagonal, so it
+cannot shrink.
+
+**Annular ring rationale** (the user delegated this call): the risk being
+managed is a hand-held drill wandering and tearing the ring. The oval shape
+puts 0.80 mm of copper above and below every hole — the direction a bit is
+most likely to walk along a row — while spending ring only on the narrow axis
+where the gap must open up. Unused pins are set at 0.30 mm because **routing is
+provably indifferent to their size** (probed at 1.60 mm and 1.10 mm: byte-identical
+routing outcome), so the choice is purely mechanical, and a 0.30 mm ring is
+still solderable if a spare GPIO is ever needed. They carry no current and no
+mechanical load — the socket strips are held by the 17 soldered pins.
+
+**2. Clearance and trace width.** Routing and pour clearance both go to
+**0.8 mm** (NFR-007). Signal traces stay **0.7 mm**, power/GND **1.5 mm**.
+Wider signal traces were tested and rejected: 0.9 mm costs a third jumper for
+no benefit the user values, and the user's stated priority is clearance over
+trace width, because on an LCD panel a wider designed gap is what buys safe
+over-exposure latitude.
+
+**3. Two wire jumpers are accepted, reversing amendment 1's zero-jumper result.**
+At 0.8 mm clearance the board routes with **2 jumpers**, always the same two
+nets (`Net-(U1-GPIO5)` U1.8→R2.1 and `Net-(U1-TX)` U1.18→R6.2). This was probed
+against every available lever — 88 × 55 and 90 × 60 outlines, unused pads at
+1.60 mm and 1.10 mm, and a 120-attempt search — and the answer was 2 every
+time. It is structural: nine signals cannot fan out of U1's rows once every
+escape lane is 0.8 mm wider.
+
+This is the right trade. A wire link costs nothing at etch time, adds no holes
+(it lands on existing pads), and **removes** copper features from the artwork,
+whereas the 0.54 mm gaps it buys out are exactly what was failing to develop
+cleanly. NFR-006 budgets ≤ ~8 jumpers; 2 is well inside it. Each is listed in
+BUILD.md.
+
+**4. Board stays 88 × 55 mm.** Growing to the NFR-008 limit of 90 × 60 was
+probed and produced *no* routing improvement, so the extra size would be cost
+with no benefit. 88 × 55 satisfies AC-8 with 2 mm / 5 mm to spare.
+
+**5. FR-032 withdrawn — D2 and R12 are removed** from schematic, BOM and board.
+This also clears the D2/R12/J3 courtyard overlaps flagged in earlier DRC runs.
+The T-007 bare-board procedure loses its LED step and becomes a meter check of
+the protected rail, which it already required.
+
+**Resulting minimum copper gap anywhere on the board: 0.84 mm** (adjacent
+in-use module pins), against the 0.80 mm requirement.
+
 ## Requirements Traceability
 
 | Requirement | Design Decision | Validation |
@@ -294,6 +357,8 @@ the design gate does not need reopening.
 | NFR-003 | Silkscreen labels | Layout review |
 | NFR-004 | BOM + build notes | Docs present |
 | NFR-005 | R/C values vs ≤1 MHz SPI | Typing reliable |
+| NFR-007 | Oval module pads (1.70 × 2.60), 0.8 mm routing + pour clearance | `bridge_risk.py` audit reports no gap < 0.8 mm; clean etch |
+| NFR-008 | 88 × 55 mm outline | Measure the plotted outline |
 
 ## Risks and Trade-offs
 
