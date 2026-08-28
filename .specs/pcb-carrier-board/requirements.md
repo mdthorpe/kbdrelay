@@ -2,6 +2,10 @@
 
 Spec: `pcb-carrier-board`
 Status: requirements-approved
+Closed: 2026-08-27 — **this spec is the v0.1 record. Do not amend it.** v0.1 is
+shipped and hardware-verified (git tag `v0.1-board`). New work goes in the v0.2
+spec, seeded by `../../hardware/pcb-carrier/RETRO-v0.1.md`.
+
 Created: 2026-08-18
 Brainstorm: `./brainstorm.md`
 

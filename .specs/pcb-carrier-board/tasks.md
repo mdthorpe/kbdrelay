@@ -2,6 +2,10 @@
 
 Spec: `pcb-carrier-board`
 Status: implementation-in-progress
+Closed: 2026-08-27 — **this spec is the v0.1 record. Do not amend it.** v0.1 is
+shipped and hardware-verified (git tag `v0.1-board`). New work goes in the v0.2
+spec, seeded by `../../hardware/pcb-carrier/RETRO-v0.1.md`.
+
 Created: 2026-08-18
 Brainstorm: `./brainstorm.md`
 Requirements: `./requirements.md`
@@ -146,7 +150,7 @@ when" is the concrete check for each. Board is designed in KiCad, single-sided
     `lib_footprint_mismatch` (board copies differ from library copies; predates
     this work, not fabrication-relevant).
 
-- [ ] 5. DRC + design review vs traceability
+- [x] 5. DRC + design review vs traceability
   - ID: T-005
   - Requirement(s): FR-013, FR-023, FR-020, NFR-001
   - Files/areas: KiCad DRC, `design.md` traceability table
@@ -155,6 +159,33 @@ when" is the concrete check for each. Board is designed in KiCad, single-sided
     orientation — silkscreen band/cathode toward the load, polyfuse in series,
     TGT.5V unconnected, UART series R).
   - Done when: **DRC passes**; every traceability row visually verified on-board.
+  - **Status: done (verified 2026-08-27, retroactively, on the as-etched board).**
+
+  **DRC** — `kicad-cli pcb drc --severity-error kbdrelay-carrier-v0.1.kicad_pcb`:
+  **0 violations**, 0 footprint errors. One `[unconnected_items]` remains: the
+  **GND pour is split into two islands** at (104.75, 77.75). Benign on the
+  shipped board but logged as a v0.2 defect (see design.md amendment 6).
+  Result is stable after a `pcbnew` load/re-save normalization pass, so the
+  file's name-only nets (`(net "GND")` with no numeric table) do **not**
+  invalidate the connectivity check — `GetNetCount()` = 42 and DRC is identical
+  before and after. The superseded scripted board `kbdrelay-carrier.kicad_pcb`
+  is **not** clean (4 courtyard overlaps: F1/C1, R12/D2, C1/H3, D2/J3).
+
+  **ERC** — `kicad-cli sch erc kbdrelay-carrier.kicad_sch`: **0 violations**.
+
+  **Traceability walk** — verified from actual pad-to-net mapping via `pcbnew`,
+  not by eye:
+
+  | Row | Check | Evidence (as-built pad nets) | Result |
+  |-----|-------|------------------------------|--------|
+  | FR-003 / FR-020 | 5 V domains isolated | `U2.1[VDD]` = `unconnected-(U2-VDD-Pad1)` — TGT 5 V genuinely NC; only `U1.1[VDD]` = `/+5V_KBD` | ✅ |
+  | FR-010 | GND common | `U1.2` = `U2.2` = `GND` | ✅ |
+  | FR-013 | D1 Schottky orientation | anode `D1.2[A]` = `/+5V_IN`, cathode `D1.1[K]` = `/+5V_PROT` — band toward the load | ✅ |
+  | FR-022 | PPTC in series on the rail | `F1.1` = `/+5V_PROT` → `F1.2` = `/+5V_KBD`, i.e. downstream of D1, upstream of U1.VDD | ✅ |
+  | FR-023 | Series R on **all 5** SPI lines | each line is two distinct nets across a resistor: GPIO4/5/6 = `Net-(U1-GPIOn)` / `Net-(U2-GPIOn)`; CS = `/CS_KBD` / `/CS_TGT`; DRDY = `/DRDY_KBD` / `/DRDY_TGT` | ✅ |
+  | FR-026 | UART series R, **no VCC** on headers | `U1/U2 TX,RX` = `Net-(Ux-TX/RX)` vs `J1/J2` = `Net-(Jx-Pin_n)` (split by R6–R9); J1/J2 carry no 5 V or 3V3 net | ✅ |
+  | FR-030 | BOOT/RESET reachable | GP9 = `unconnected-(Ux-GPIO9-Pad12)` on both modules (soft-reset removed); buttons accessible with modules seated | ✅ |
+  | FR-032 | Power-good LED | **withdrawn** — no D2/R12 on the board (22 footprints: U1 U2 D1 F1 C1 C2 R1–R9 J1–J3 H1–H4) | n/a |
 
 - [x] 6. Fabrication outputs + build notes
   - ID: T-006

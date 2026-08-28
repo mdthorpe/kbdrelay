@@ -21,10 +21,11 @@ Everything is in `fab/`:
 > matched the board. Press `B` (Edit → Fill All Zones), then re-run DRC, then
 > export.
 
-> **Board of record is `kbdrelay-carrier-test2.kicad_pcb`** (hand-routed:
+> **Board of record is `kbdrelay-carrier-v0.1.kicad_pcb`** (hand-routed:
 > 1.0 mm traces, 1.4 mm pour clearance, 1.70 mm module pads, zero jumpers).
 > The script-generated `kbdrelay-carrier.kicad_pcb` is a fallback and does NOT
-> match it. Export from test2.
+> match it (it has 4 courtyard-overlap DRC errors and still carries the dropped
+> power-good LED). Export from `kbdrelay-carrier-v0.1.kicad_pcb` only.
 
 
 > **Fab outputs live in `hardware/pcb-carrier/fab/` and nowhere else.**

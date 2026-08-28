@@ -1,7 +1,10 @@
 # Pcb Carrier Board Design
 
 Spec: `pcb-carrier-board`
-Status: design-draft
+Status: design-approved  
+Closed: 2026-08-27 — superseded for future work by the v0.2 effort. This spec is
+the **v0.1 record**; do not amend it further. See `../pcb-carrier-v0_2/` and the
+v0.1 retrospective at `../../hardware/pcb-carrier/RETRO-v0.1.md`.
 Created: 2026-08-18
 Brainstorm: `./brainstorm.md`
 Requirements: `./requirements.md`
@@ -230,8 +233,9 @@ J_PWR(GND) ───────────────────────
 - **Home-fab profile (starting targets, finalized in layout):** signal traces
   ~0.5 mm, power traces ~1.0 mm, clearance ~0.5 mm, drills ~0.9 mm with generous
   ~2 mm pads.
-- **As-routed profile:** signal 0.7 mm, power/GND 1.5 mm, clearance 0.4 mm,
-  module + PPTC drills 1.0 mm / 2.0 mm pads, all other parts library default.
+- **As-routed profile (scripted router, superseded):** signal 0.7 mm, power/GND
+  1.5 mm, clearance 0.4 mm, module + PPTC drills 1.0 mm / 2.0 mm pads, all other
+  parts library default. ⚠ **This is not what shipped** — see amendment 6.
 
 ### Layout amendment (2026-08-21) — as-built placement
 
@@ -331,6 +335,44 @@ the protected rail, which it already required.
 
 **Resulting minimum copper gap anywhere on the board: 0.84 mm** (adjacent
 in-use module pins), against the 0.80 mm requirement.
+
+**6. As-built v0.1 — the hand route beat the script, and amendments 2 and 3 are
+superseded** (recorded 2026-08-27, after the board was etched and verified).
+
+The shipped board is `kbdrelay-carrier-v0.1.kicad_pcb`, hand-routed. It is
+**strictly better** than every scripted result above, so the numbers in
+amendments 2–3 describe a design that was never fabricated:
+
+| Parameter | Amendment 2/3 (scripted) | **As-built v0.1 (hand)** |
+|-----------|--------------------------|--------------------------|
+| Signal trace | 0.7 mm | **1.0 mm** (70 of 73 segments; 2 @ 0.8, 1 @ 1.5) |
+| Pour clearance | 0.8 mm | **1.4 mm** |
+| Min copper gap | 0.84 mm | **0.605 mm** at module pads, ≥1.4 mm elsewhere |
+| Module pads | 2.0 mm round / 1.70 × 2.60 oval | **1.70 mm** |
+| Wire jumpers | **2** (accepted) | **0** — zero F.Cu segments |
+| Layers | B.Cu only | B.Cu only (73 segments) |
+| Outline | 88 × 55 mm | 88 × 55 mm (unchanged) |
+| DRC | "clean" | **0 errors** (`kicad-cli pcb drc`) |
+
+The "nine signals cannot fan out of U1's rows once every escape lane is 0.8 mm
+wider — it is structural" claim in amendment 3 is **retracted**: a human found a
+zero-jumper solution at *wider* traces than the router ever tried. Treat
+router-derived impossibility claims in this spec as "the script failed", not
+"the board cannot".
+
+**Known as-built defect carried into v0.2:** DRC reports **1 unconnected item —
+the GND pour is split into two islands** that do not connect to each other
+(`[unconnected_items]` between two `Zone [GND] on B.Cu` regions at
+104.75, 77.75). The board works, so the split is benign in practice on this
+layout, but it is an unintentional single-point-of-failure in the ground return
+and v0.2 must produce a single contiguous GND pour or an explicit, deliberate
+split with a stated stitch point.
+
+**Superseded artifact:** the script-generated `kbdrelay-carrier.kicad_pcb`
+remains in the tree as the scripted-route fallback. It does **not** match the
+shipped board, has **4 courtyard-overlap DRC errors** (F1/C1, R12/D2, C1/H3,
+D2/J3), and still carries the withdrawn D2/R12 LED. Never export fab output
+from it.
 
 ## Requirements Traceability
 

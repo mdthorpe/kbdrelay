@@ -9,7 +9,7 @@
 set -e
 K=/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
 KPY=/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python3
-P="${1:-kbdrelay-carrier/kbdrelay-carrier-test2.kicad_pcb}"
+P="${1:-kbdrelay-carrier/kbdrelay-carrier-v0.1.kicad_pcb}"
 OUT=fab/lcd
 PX=0.018; CW=8520; CH=4320
 mkdir -p "$OUT"

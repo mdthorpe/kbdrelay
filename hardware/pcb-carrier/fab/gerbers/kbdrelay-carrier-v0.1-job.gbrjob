@@ -9,7 +9,7 @@
   },
   "GeneralSpecs": {
     "ProjectId": {
-      "Name": "kbdrelay-carrier-test2",
+      "Name": "kbdrelay-carrier-v0.1",
       "GUID": "6b626472-656c-4617-992d-636172726965",
       "Revision": "rev?"
     },
@@ -34,47 +34,47 @@
   ],
   "FilesAttributes": [
     {
-      "Path": "kbdrelay-carrier-test2-F_Cu.gbr",
+      "Path": "kbdrelay-carrier-v0.1-F_Cu.gbr",
       "FileFunction": "Copper,L1,Top",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "kbdrelay-carrier-test2-B_Cu.gbr",
+      "Path": "kbdrelay-carrier-v0.1-B_Cu.gbr",
       "FileFunction": "Copper,L2,Bot",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "kbdrelay-carrier-test2-F_Paste.gbr",
+      "Path": "kbdrelay-carrier-v0.1-F_Paste.gbr",
       "FileFunction": "SolderPaste,Top",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "kbdrelay-carrier-test2-B_Paste.gbr",
+      "Path": "kbdrelay-carrier-v0.1-B_Paste.gbr",
       "FileFunction": "SolderPaste,Bot",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "kbdrelay-carrier-test2-F_Silkscreen.gbr",
+      "Path": "kbdrelay-carrier-v0.1-F_Silkscreen.gbr",
       "FileFunction": "Legend,Top",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "kbdrelay-carrier-test2-B_Silkscreen.gbr",
+      "Path": "kbdrelay-carrier-v0.1-B_Silkscreen.gbr",
       "FileFunction": "Legend,Bot",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "kbdrelay-carrier-test2-F_Mask.gbr",
+      "Path": "kbdrelay-carrier-v0.1-F_Mask.gbr",
       "FileFunction": "SolderMask,Top",
       "FilePolarity": "Negative"
     },
     {
-      "Path": "kbdrelay-carrier-test2-B_Mask.gbr",
+      "Path": "kbdrelay-carrier-v0.1-B_Mask.gbr",
       "FileFunction": "SolderMask,Bot",
       "FilePolarity": "Negative"
     },
     {
-      "Path": "kbdrelay-carrier-test2-Edge_Cuts.gbr",
+      "Path": "kbdrelay-carrier-v0.1-Edge_Cuts.gbr",
       "FileFunction": "Profile",
       "FilePolarity": "Positive"
     }

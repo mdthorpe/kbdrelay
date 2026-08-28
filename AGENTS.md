@@ -15,14 +15,19 @@ Caps/Num/Scroll-Lock LED state flows back TGT→KBD to the keyboard.
 Naming is strict: **KBD** = keyboard-facing, **TGT** = target-facing.
 "sender/receiver" is banned (both send and receive on SPI).
 
-## Status (2026-08)
+## Status (2026-08-27)
 
 - **v1 firmware: COMPLETE and hardware-verified** — AC1–AC5 passed, including a
   real run on a **Commodore Amiga 1200 (1992)** via a USB keyboard adapter, with
   modern and vintage keyboards. Pushed to `github.com/mdthorpe/kbdrelay`.
-- **PCB carrier board: IN PROGRESS** (spec-driven, see `.specs/pcb-carrier-board/`):
-  brainstorm + requirements + design **approved**; `tasks.md` still `tasks-draft`;
-  KiCad project started; currently selecting the reverse-polarity P-FET.
+- **PCB carrier v0.1: SHIPPED and hardware-verified.** Home-etched, assembled,
+  runs the bridge. Frozen at git tag **`v0.1-board`**. The
+  `.specs/pcb-carrier-board/` spec is **CLOSED as the v0.1 record — do not amend
+  it**.
+- **PCB carrier v0.2: being scoped.** Read
+  [`hardware/pcb-carrier/RETRO-v0.1.md`](hardware/pcb-carrier/RETRO-v0.1.md)
+  first — it is the seed for the v0.2 brainstorm gate and lists the 8 numbered
+  findings v0.2 exists to address. The v0.2 spec does not exist yet.
 
 ## Repo map
 
@@ -99,11 +104,18 @@ Board def is in-repo (`boards/waveshare_esp32_s3_zero.json`). Firmware is
 
 ## Current open task (PCB)
 
-**Next up: T-005** (DRC + walk the design.md traceability table confirming every
-FR is physically present on the board), then T-006 (Gerbers, 1:1 etch print,
-BUILD.md). T-001..T-004 are checked off; layout is complete and DRC-clean.
+**v0.1 is done. Next work is the v0.2 spec**, starting from a brainstorm gate
+seeded by `hardware/pcb-carrier/RETRO-v0.1.md`. Nothing in
+`.specs/pcb-carrier-board/` should be edited except to correct the v0.1 record.
 
-**Reverse-polarity part: SETTLED — series Schottky, not a P-FET.** Logic-level
+v0.1 close-out state: T-001–T-006 checked. **T-007/T-008 (bare-board and
+populated bring-up) remain unchecked** — the work demonstrably happened on the
+bench but the measurements were never written down, so the evidence is missing.
+See RETRO-v0.1.md §4 for the specific numbers still needed.
+
+### v0.1 part decisions (carried, unless v0.2 revisits them)
+
+**Reverse-polarity part: series Schottky, not a P-FET.** Logic-level
 THT POWER P-FETs proved unsourceable at hobby quantity, so `D1 = 1N5817`
 (1 A / 20 V, DO-41, on hand; 1N5819 drop-in). Symbol `Device:D_Schottky`,
 footprint `Diode_THT:D_DO-201AD_P12.70mm_Horizontal` — the 12.70 mm pitch is
@@ -116,8 +128,9 @@ at J_PWR, and bring-up **must measure loaded keyboard VBUS ≥ 4.40 V**.
 
 **Schematic: COMPLETE and ERC-clean (0 errors).** Full capture per design.md —
 power path (J3→D1→C1/C2→F1→U1.5V), SPI GP4–GP8 with 2.2 k series each, both UART
-headers with 1 k series and no VCC, power-good LED, TGT 5V no-connected. Every
-part has a value + footprint; `hardware/pcb-carrier/BOM.md` is generated from it.
+headers with 1 k series and no VCC, TGT 5V no-connected. **No power-good LED** —
+FR-032 was withdrawn and D2/R12 deleted. Every part has a value + footprint;
+`hardware/pcb-carrier/BOM.md` is generated from it (22 refs, matches the board).
 
 **Approved design amendments since the first draft** (all gated individually):
 1. **D1 = 1N5817 series Schottky** replaces the P-FET (sourcing).
@@ -130,9 +143,9 @@ part has a value + footprint; `hardware/pcb-carrier/BOM.md` is generated from it
    a **placement constraint**: layout must leave both modules' onboard BOOT/RESET
    buttons reachable with the modules seated.
 
-**Spec gates:** requirements-approved, design-approved, tasks-approved,
-now **implementation-in-progress**. T-001..T-004 checked off (project +
-libraries, ERC-clean schematic, BOM, and a DRC-clean single-layer layout).
+**Spec gates (v0.1, closed):** requirements-approved, design-approved,
+tasks-approved, implementation-in-progress. T-001–T-006 checked;
+T-007/T-008 unchecked for lack of recorded bench evidence.
 
 **Libraries are project-local and self-contained — no blockers left for layout.**
 Both S3-Zero library files live in the repo and resolve via `${KIPRJMOD}`:
@@ -159,42 +172,61 @@ footprint is kept alongside for direct castellated soldering.
 Bourns footprint staggers its pads 1.2 mm for kinked leads, which the Littelfuse
 part does not have.
 
-## PCB layout — T-004 COMPLETE (2026-08-21)
+## PCB layout — v0.1 AS BUILT (verified from the file, 2026-08-27)
 
-Board is **88 × 55 mm landscape**, per the user's sketch
-(`hardware/v0.1_board_design.png`): modules at the left and right edges so USB-C
-exits each short end (cable straight through), discretes in the middle.
-**100% routed on B.Cu, ZERO jumpers, zero unconnected, DRC-clean** (no
-clearance / short / crossing / copper-edge violations).
+⚠ **The board of record is HAND-ROUTED, not scripted.** The old "layout is
+scripted and idempotent — do not hand-edit" rule is **retracted**: re-running
+`place.py`/`route.py` would *destroy* the shipped layout, which is strictly
+better than anything the router produced.
 
-**Layout is scripted and idempotent — do not hand-edit the .kicad_pcb.**
+| File | Role |
+|------|------|
+| `kbdrelay-carrier/kbdrelay-carrier-v0.1.kicad_pcb` | **BOARD OF RECORD.** Hand-routed. 0 DRC errors. |
+| `kbdrelay-carrier/kbdrelay-carrier.kicad_sch` | the schematic — one, shared by both layouts. ERC clean. |
+| `kbdrelay-carrier/kbdrelay-carrier.kicad_pcb` | superseded scripted layout. ⚠ **4 courtyard-overlap DRC errors**, still carries the dropped D2/R12 LED. **Never export fab output from it.** |
+| `fab/gerbers/kbdrelay-carrier-v0.1-*.gbr` | the artwork actually etched. |
 
-| Script | Does |
-|--------|------|
-| `hardware/pcb-carrier/place.py` | placement table, board outline, 4× M3 holes, silkscreen, `BOTTOM` B.Cu label, centres the board on the A4 sheet |
-| `hardware/pcb-carrier/route.py` | strips old routing, maze-routes B.Cu, GND pour + island repair, DRC-safe geometry |
+As-built numbers (these supersede every earlier figure in the spec):
 
-Run both with **KiCad's bundled python**
-(`/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python3`),
-place first, then route (`--attempts=N`, deterministic via `--seed`), then
-`kicad-cli pcb drc`. Re-running regenerates the board from scratch.
+| Parameter | v0.1 as built |
+|-----------|---------------|
+| Outline | 88 × 55 mm landscape, 4× M3 corner holes |
+| Copper | **B.Cu only**, 73 segments, **0 on F.Cu** |
+| Track widths | 70 × **1.0 mm**, 2 × 0.8 mm, 1 × 1.5 mm |
+| Pour clearance | **1.4 mm** |
+| Min copper gap | **0.605 mm** (module pad rows) — below the 0.8 mm NFR-007 target |
+| Module pads | 1.70 mm, 1.0 mm drill |
+| Wire jumpers | **0** |
+| Footprints | 22 — U1 U2 D1 F1 C1 C2 R1–R9 J1–J3 H1–H4 (**no LED**) |
+| DRC | 0 violations + **1 known defect: the GND pour is split into two islands** |
 
-- U1 rot **90** anchor (1.5, 36.53); U2 rot **270** anchor (86.5, 18.47), both
-  board-local (board origin is (104.5, 77.5) on the A4 sheet).
+Modules sit at the left and right short edges so USB-C exits each end (cable
+straight through), discretes in the middle, per `hardware/v0.1_board_design.png`.
+U1 rot 90 anchor (1.5, 36.53); U2 rot 270 anchor (86.5, 18.47), board-local
+(board origin (104.5, 77.5) on the A4 sheet). 5V In is bottom-left, not top-left,
+because U1's VDD/GND land on the bottom row at that end.
+
+`place.py` / `route.py` are kept as the **superseded scripted path** — useful
+reference for pcbnew scripting technique, not for producing a board. Run with
+KiCad's bundled python
+(`/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python3`).
+Check any board with the file-based `kicad-cli pcb drc`, which is the only
+trustworthy verdict.
+
 - Top-left: KBD UART (R6/R7 → J1). Bottom-left: power chain J3→D1→F1→U1.VDD,
-  plus C1/C2 and the LED. Middle: SPI resistors in **one column** at x=45,
-  5 mm pitch. Bottom-right: TGT UART (J2 + R8/R9).
-- Deviation from the sketch: **5V In is bottom-left, not top-left**, because
-  U1's VDD/GND land on the bottom row at that end.
-- Widths 0.7 mm signal / 1.5 mm power+GND, clearance 0.4 mm (must stay ≤0.5 mm —
-  module pads leave only 0.54 mm between neighbours), 1.0 mm drills / 2.0 mm
-  pads on modules + PPTC.
+  plus C1/C2. Middle: SPI resistors in **one column** at x=45, 5 mm pitch.
+  Bottom-right: TGT UART (J2 + R8/R9).
+- Widths and clearances: see the as-built table above. The **0.7 mm signal /
+  0.4 mm clearance** figures that used to live here described the scripted
+  layout and were **never fabricated** — don't quote them.
 
-⚠ **The old "zero crossings is provably impossible" claim was WRONG** and is now
-retracted in design.md and tasks.md — it applied an annulus argument that
-ignores routing *around* a module and *under* its body between the two pad rows.
-The board routes with zero crossings, so neither escape hatch (flip U2 to the
-back layer; reverse TGT's SPI pin order in firmware) is needed.
+⚠ **Two impossibility claims in this spec have now been retracted.** First, the
+"zero crossings is provably impossible" annulus argument (it ignored routing
+around a module and under its body between the pad rows). Second, design.md
+amendment 3's "zero jumpers is structural — nine signals cannot fan out of U1's
+rows at 0.8 mm clearance", which a human disproved by hand-routing zero jumpers
+at *wider* traces. **Pattern: when the router fails, that is a fact about the
+router, not about the board.** Do not record search failures as proofs.
 
 ### Layout gotchas paid for in blood
 

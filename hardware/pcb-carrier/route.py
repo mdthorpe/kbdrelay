@@ -40,7 +40,7 @@ GND_CHANNELS_LOCAL = [(11.9, 48.5, 14.1, 54.0),    # C1.2 down to the bottom pou
 POUR_NET = "GND"
 
 # ---------------------------------------------------------------- safety gate
-# The hand-routed board (kbdrelay-carrier-test2) beats anything this router
+# The hand-routed board (kbdrelay-carrier-v0.1) beats anything this router
 # produces: it reaches 1.0 mm traces with ZERO jumpers, where the router needs
 # 1-2 jumpers at the same clearance. Re-running this script strips all existing
 # routing first, so pointing it at a hand-routed board silently destroys work.
