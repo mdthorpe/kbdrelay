@@ -123,8 +123,14 @@ deliberate so a lower-Vf **SB540/SB560** (DO-201AD) drops in with no respin.
 Wiring: anode→+5 V in, cathode→load (+5V_KBD). The 100 kΩ gate resistor is gone.
 
 ⚠ **Cost of the swap:** ~0.3 V Vf at 0.3 A → keyboard VBUS ≈4.6 V from a 5.00 V
-input (USB floor is 4.40 V). Margin is finite now. Prefer a **5.1–5.25 V** feed
-at J_PWR, and bring-up **must measure loaded keyboard VBUS ≥ 4.40 V**.
+input (USB floor is 4.40 V). Prefer a **5.1–5.25 V** feed at J_PWR.
+
+**Status: accepted risk, UNMEASURED.** v0.1 VBUS was never metered; no
+misbehaviour seen, and a THT logic-level P-FET is unsourceable, so the Schottky
+stands into v0.2. Do not read this as verified — "works with the keyboards tried"
+is not a margin figure. Escape hatch with no respin: **fit an SB540/SB560**
+(the DO-201AD / 12.70 mm footprint exists for exactly this, ~half the Vf, and it
+retrofits to the v0.1 board). v0.2 bring-up should finally measure it.
 
 **Schematic: COMPLETE and ERC-clean (0 errors).** Full capture per design.md —
 power path (J3→D1→C1/C2→F1→U1.5V), SPI GP4–GP8 with 2.2 k series each, both UART

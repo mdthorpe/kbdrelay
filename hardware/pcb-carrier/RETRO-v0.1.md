@@ -89,12 +89,29 @@ rows are still 0.605 mm apart, because pad-to-pad spacing on a 2.54 mm 2×9
 module is fixed by the part. *v0.2 decision needed: accept it, shrink the pads
 further, or change the module interface.*
 
-**F-8. Schottky Vf eats the USB voltage margin.** D1 = 1N5817 drops ~0.3 V at
-0.3 A, plus F1's 0.2–0.47 Ω, so keyboard VBUS lands near 4.6 V from a 5.00 V
-feed against a 4.40 V USB floor. Mitigation was "feed 5.1–5.25 V and measure".
-**[NEEDS BENCH DATA: what did loaded keyboard VBUS actually measure?]**
-*v0.2 should either confirm the margin empirically or eliminate the series drop
-(ideal-diode / P-FET now that THT sourcing is understood).*
+**F-8. Schottky Vf eats the USB voltage margin — ACCEPTED, UNMEASURED.**
+D1 = 1N5817 drops ~0.3 V at 0.3 A, plus F1's 0.2–0.47 Ω, so keyboard VBUS is
+calculated to land near 4.6 V from a 5.00 V feed against the 4.40 V USB floor.
+
+**Decision (2026-08-27, user):** carry it forward unchanged. VBUS was **never
+measured**; no misbehaviour was observed with the keyboards tried, and a
+through-hole logic-level P-FET is unsourceable at hobby quantity, so the series
+Schottky stands.
+
+⚠ Recorded honestly: "no odd behaviour observed" is **not** a margin
+measurement. If the real figure is ~4.45 V the board works today and fails on
+the first hungrier keyboard or slightly sagging feed. This is an accepted risk,
+not a closed question.
+
+**Two cheap escape hatches exist, neither requiring a P-FET or a respin:**
+1. **Fit an SB540/SB560** — the D1 footprint is DO-201AD / 12.70 mm *specifically*
+   so this drops in. Roughly half the 1N5817's Vf at this current, worth ~0.15 V,
+   and it retrofits to the existing v0.1 board.
+2. **Feed 5.1–5.25 V at J3** — already the documented recommendation.
+
+*v0.2 action: keep the series Schottky and the drop-in-compatible footprint, and
+make "measure loaded keyboard VBUS" a one-line bring-up step so the number
+finally exists. Breadboarding an ideal-diode alternative is parked, not rejected.*
 
 ---
 
@@ -102,10 +119,11 @@ feed against a 4.40 V USB floor. Mitigation was "feed 5.1–5.25 V and measure".
 
 Answer these and the v0.2 brainstorm can start from evidence instead of guesses.
 
-1. **Keyboard VBUS under load** — measured volts at the keyboard with the
-   hungriest keyboard attached, and the J_PWR input voltage it was measured
-   against. This decides whether F-8 forces a power-path redesign.
+1. ~~Keyboard VBUS under load~~ — **answered: never measured, risk accepted.**
+   See F-8. Still worth a 2-minute meter check on the existing board if it is
+   ever out on the bench, since it closes the question permanently.
 2. **F1 in-circuit DC resistance** — the T-007 measurement (expected 0.2–1.2 Ω).
+   Cheap to take alongside item 1.
 3. **Did anything nuisance-trip, brown out, or fail to enumerate?** Including
    the high-inrush keyboard, and whether the 470 µF bulk cap was sufficient.
 4. **Power-up ordering** — did all orders work, especially KBD-first → TGT
