@@ -24,10 +24,15 @@ Naming is strict: **KBD** = keyboard-facing, **TGT** = target-facing.
   runs the bridge. Frozen at git tag **`v0.1-board`**. The
   `.specs/pcb-carrier-board/` spec is **CLOSED as the v0.1 record — do not amend
   it**.
-- **PCB carrier v0.2: being scoped.** Read
+- **PCB carrier v0.2: spec started** at `.specs/pcb-carrier-v0-2/`. Brainstorm
+  gate **complete**; `requirements.md` is at **requirements-draft** awaiting
+  approval. Read
   [`hardware/pcb-carrier/RETRO-v0.1.md`](hardware/pcb-carrier/RETRO-v0.1.md)
-  first — it is the seed for the v0.2 brainstorm gate and lists the 8 numbered
-  findings v0.2 exists to address. The v0.2 spec does not exist yet.
+  alongside it — it lists the 8 numbered v0.1 findings the requirements trace
+  back to. ⚠ v0.2 IDs are freshly numbered and do **not** map to v0.1's.
+  v0.2 is a **clean-sheet redesign**: PCBWay 2-layer fab, barrel-jack input with
+  re-derived protection, THT-only sourceable discretes, 3D-printed case. The
+  S3-Zero modules, their pin mapping, and the firmware are unchanged.
 
 ## Repo map
 

@@ -3,7 +3,7 @@
 Spec: `pcb-carrier-board`
 Status: design-approved  
 Closed: 2026-08-27 — superseded for future work by the v0.2 effort. This spec is
-the **v0.1 record**; do not amend it further. See `../pcb-carrier-v0_2/` and the
+the **v0.1 record**; do not amend it further. See `../pcb-carrier-v0-2/` and the
 v0.1 retrospective at `../../hardware/pcb-carrier/RETRO-v0.1.md`.
 Created: 2026-08-18
 Brainstorm: `./brainstorm.md`

@@ -39,7 +39,41 @@ must leave accessible. GP9 is unconnected on both modules.)*
 | — | 4 | **1×9** female headers, 2.54 mm | (part of the module footprint) | Two per module so the S3-Zeros are removable. Not a schematic symbol. Rows are 15.24 mm (0.6") apart. |
 | H1–H4 | 4 | M3 mounting holes (3.2 mm, non-plated) | `MountingHole:MountingHole_3.2mm_M3` | Board corners, 3.5 mm in. Not a schematic symbol. H3 (bottom-left) sits close to C1's body — use a low-profile screw/washer. |
 
-## Purchasing table
+## Purchasing table (PCBWay assembly BOM)
+
+**Machine-readable copy: [`kbdrelay-carrier-v0.1-BOM.csv`](kbdrelay-carrier-v0.1-BOM.csv)** — that
+file is the one to upload. PCBWay accepts `.csv`/`.xls`/`.xlsx` only; markdown is
+for humans. The CSV carries the full **turn-key** column set (Line#, Qty per P/N,
+Reference Designator, Part Number, Part Description, Package, Type, Manufacturers
+Name, Manufacturers Part Number, Distributors Part Number) per
+<https://www.pcbway.com/assembly-file-requirements.html>, so it also satisfies the
+shorter consigned/kitted set.
+
+✅ **Every Digi-Key SKU below was resolved against the live Product Information V4
+API on 2026-08-27** and is recorded with its package type, MOQ and stock at time
+of lookup. All ten purchasable lines are **Active, MOQ 1, and in stock**.
+
+⚠ **Three MPNs in the first draft were wrong.** The API caught all three; they were
+plausible-looking guesses that would each have cost a re-order:
+
+| Ref | Draft MPN | Problem | Corrected to |
+|-----|-----------|---------|--------------|
+| C1 | `UVR1C471MPD` | Real part, but **8.00 mm dia / 3.50 mm lead spacing** — does not fit the `D10.0mm_P5.00mm` footprint | `EEU-FC1C471` (Panasonic FC, **10.00 mm dia / 5.00 mm LS**, 12.5 mm H) |
+| C1 | `UVR1C471MED` | **Does not exist.** Invented by guessing at Nichicon's size-code scheme | — as above |
+| C2 | `K104K15X7RF5TL2` | Real part, but **2.50 mm lead spacing** — footprint wants 5.00 mm | `K104K15X7RF53H5` (same Vishay K-series, **5.00 mm LS**) |
+| R6–R9 | `CFR-25JB-52-1K0` | **Does not exist.** Yageo's 1 k suffix is `-1K`, not `-1K0` | `CFR-25JB-52-1K` |
+
+The C1/C2 errors are the interesting ones: both draft parts were *real, orderable
+parts with the right electrical spec and the wrong mechanical footprint*. A BOM
+checked only on capacitance and voltage would have passed them.
+
+**Centroid file: not applicable.** PCBWay only wants pick-and-place data for
+surface-mount parts, and this board has none. Send Gerbers + BOM + the assembly
+drawing; state "100% through-hole, no SMT" on the order.
+
+**Line 1 (the modules) and line 11 (their pin strips) must be consigned** —
+Waveshare S3-Zeros aren't a distributor stock item, and line 11 solders to the
+*module*, not the carrier. Line 12 is hardware: do not assemble.
 
 Quantities are per board. Every board-mounted item is **through-hole**; there
 are no surface-mount parts. Part numbers marked *(rep.)* are representative
@@ -48,18 +82,29 @@ jellybean MPNs — any equivalent from a reputable maker is fine. Part numbers i
 
 | Line# | Qty per P/N | Reference Designator | Part Number | Part Description | Package | Type |
 |------:|------------:|----------------------|-------------|------------------|---------|------|
-| 1 | 2 | U1, U2 | Waveshare ESP32-S3-Zero | ESP32-S3FH4R2 module, USB-C, 2×9 castellated/THT pads | Module, 18.06 × 23.53 mm, 2×9 @ 2.54 mm, 15.24 mm rows | Thru-hole (socketed) |
-| 2 | 1 | D1 | **1N5817** | Schottky rectifier, 1 A / 20 V, reverse-polarity protection | DO-41 (board pads are DO-201AD, 12.70 mm pitch) | Thru-hole |
-| 3 | 1 | C1 | UVR1C471MPD *(rep.)* | Aluminium electrolytic capacitor, 470 µF / 16 V — inrush bulk | Radial, D10.0 mm, 5.00 mm pitch | Thru-hole |
-| 4 | 1 | C2 | K104K15X7RF5TL2 *(rep.)* | Ceramic capacitor, 100 nF / 50 V, X7R — HF decoupling | Disc, D5.0 mm, 5.00 mm pitch | Thru-hole |
-| 5 | 1 | F1 | **60R090XU** (Littelfuse) | PPTC resettable fuse, 0.90 A hold / 1.80 A trip, 60 V, R₁ₘₐₓ 0.47 Ω | Radial, 11.2 × 3.1 mm body, 5.08 mm pitch | Thru-hole |
-| 6 | 5 | R1, R2, R3, R4, R5 | CFR-25JB-52-2K2 *(rep.)* | Resistor, 2.2 kΩ ±5 %, 1/4 W carbon film — SPI series | Axial DIN0207, 10.16 mm pitch | Thru-hole |
-| 7 | 4 | R6, R7, R8, R9 | CFR-25JB-52-1K0 *(rep.)* | Resistor, 1 kΩ ±5 %, 1/4 W carbon film — UART series | Axial DIN0207, 10.16 mm pitch | Thru-hole |
-| 8 | 1 | J3 | PH1-02-UA *(rep.)* | Pin header, 1×2, 2.54 mm, vertical — 5 V input | THT header, 1×2 @ 2.54 mm | Thru-hole |
-| 9 | 2 | J1, J2 | PH1-03-UA *(rep.)* | Pin header, 1×3, 2.54 mm, vertical — debug UART (TX/RX/GND, no VCC) | THT header, 1×3 @ 2.54 mm | Thru-hole |
-| 10 | 4 | (U1, U2 sockets) | PPTC091LFBN-RC *(rep.)* | Female header, 1×9, 2.54 mm — module sockets, 2 per module | THT socket strip, 1×9 @ 2.54 mm | Thru-hole |
-| 11 | 4 | (U1, U2 pins) | PREC009SAAN-RC *(rep.)* | Male pin header, 1×9, 2.54 mm — soldered into the modules' pad rows | THT header strip, 1×9 @ 2.54 mm | Thru-hole |
-| 12 | 4 | H1, H2, H3, H4 | M3×8 pan head + nut *(rep.)* | Mounting hardware, M3 — board corner holes (3.2 mm NPTH) | M3 screw / nut | Hardware (not soldered) |
+| Line# | Qty | Ref | Manufacturer | MPN | **Digi-Key SKU** | Pkg | Stock @ lookup |
+|------:|----:|-----|--------------|-----|------------------|-----|---------------:|
+| 1 | 2 | U1, U2 | Waveshare | ESP32-S3-Zero | *not stocked — buy direct* | — | — |
+| 2 | 1 | D1 | Taiwan Semiconductor | **1N5817** | `1801-1N5817CT-ND` | Cut Tape | 3 080 |
+| 3 | 1 | C1 | Panasonic Industry | EEU-FC1C471 | `P10248-ND` | Bulk | 15 960 |
+| 4 | 1 | C2 | Vishay | K104K15X7RF53H5 | `BC3323-ND` | Bulk | 38 769 |
+| 5 | 1 | F1 | Littelfuse | **60R090XU** | `F1923-ND` | Bulk | 1 048 |
+| 6 | 5 | R1–R5 | YAGEO | CFR-25JB-52-2K2 | `2.2KQBK-ND` | Bulk | 69 020 |
+| 7 | 4 | R6–R9 | YAGEO | CFR-25JB-52-1K | `1.0KQBK-ND` | Bulk | 241 553 |
+| 8 | 1 | J3 | Sullins | PREC002SAAN-RC | `35-PREC002SAAN-RC-ND` | Bulk | 3 341 |
+| 9 | 2 | J1, J2 | Sullins | PREC003SAAN-RC | `35-PREC003SAAN-RC-ND` | Bulk | 605 |
+| 10 | 4 | U1/U2 sockets | Sullins | PPTC091LFBN-RC | `S7007-ND` | Tray | 4 548 |
+| 11 | 4 | U1/U2 pins | Sullins | PREC009SAAN-RC | `35-PREC009SAAN-RC-ND` | Bulk | 853 |
+| 12 | 4 | H1–H4 | — | M3×8 pan head + nut | *hardware, not assembled* | — | — |
+
+Every line above is **MOQ 1** and **status Active**. D1 and C2/C1 notes:
+
+- **D1** resolves to Taiwan Semiconductor's `1N5817` in DO-204AL/DO-41, the only
+  exact-MPN part Digi-Key stocks under that number. It ships **Cut Tape**; the
+  Tape & Reel variant (`1801-1N5817TR-ND`) is MOQ 5 000 and out of stock — do not
+  order that one by mistake.
+- **C1** `EEU-FC1C471` is 12.50 mm seated height. Same 10 mm diameter as assumed,
+  so the **H3 clearance caveat below still applies unchanged**.
 
 **Notes on the two module lines (10 and 11):** the S3-Zeros are socketed, not
 soldered, so each module needs a 1×9 male strip in each of its two pad rows
