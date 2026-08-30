@@ -159,7 +159,18 @@ resistance is design work, not a requirement. IDs are never reused.)*
 - **NFR-002**: THE repo SHALL contain PCBWay's design rules as a project-local
   `.kicad_dru`, and the board SHALL report **zero DRC violations** against them
   via `kicad-cli pcb drc`.
-- **NFR-003**: THE board outline SHALL be no larger than 100 × 100 mm.
+- **NFR-003**: THE board outline SHALL be no larger than 100 × 100 mm, and
+  SHALL be the smallest outline that satisfies NFR-016. *(The 100 × 100 mm
+  figure is PCBWay's standard prototype pricing bracket, not a fabrication
+  limit; it is expected to be non-binding in practice. Compactness is the
+  active goal, bounded by assembly ergonomics rather than by area.)*
+- **NFR-016**: THE board SHALL remain hand-assemblable, such that: no component
+  body overhangs another component's pads or obstructs access to them; every
+  through-hole joint is reachable with a conventional soldering iron with the
+  adjacent parts already fitted; and polarised parts are oriented consistently
+  where practical. *(Compactness under NFR-003 is subordinate to this. v0.1
+  produced the counterexample — a mounting hole so close to C1's body that the
+  build notes had to specify a low-profile screw head.)*
 - **NFR-004**: ALL board-mounted components other than the two modules SHALL be
   through-hole. No surface-mount parts.
 - **NFR-005**: EVERY board-mounted component other than the two modules SHALL be
@@ -236,6 +247,9 @@ v0.1 retro finding F-1 is addressed there.)*
 - [ ] **AC-12** — The BOM lists a manufacturer part number for every part, and
       every non-module part is confirmed orderable from one distributor.
       *(NFR-005)*
+- [ ] **AC-15** — Every through-hole joint is reachable with a conventional iron
+      with adjacent parts fitted, and no component body overhangs another's
+      pads. Confirmed on the assembled board, not only in CAD. *(NFR-016)*
 - [ ] **AC-13** — The v1 firmware reproduces the v1 acceptance tests AC1–AC5 on
       this board: typing, the Caps/Num LED backchannel, hot-plug recovery, and
       watchdog behavior.
@@ -302,6 +316,15 @@ stated by a requirement.)*
   5 V left unconnected (FR-012).
 *(DC-009 was withdrawn during requirements review: "v0.1 is a reference, not a
 baseline" is already stated by the Overview and the Out of Scope list.)*
+
+## Amendments
+
+- **A-001 (2026-08-29, post-approval)** — **NFR-003 reframed and NFR-016 added.**
+  The original NFR-003 was a bare 100 × 100 mm ceiling, which expressed no
+  preference about how large the board actually ends up. Compactness is now the
+  stated goal, with the ceiling retained only as a cost bracket, and NFR-016
+  added as its explicit counterweight so that "compact" cannot be pursued into
+  an unassemblable board. Requires re-approval of the requirements gate.
 
 ## Decisions
 
