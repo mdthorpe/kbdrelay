@@ -1,7 +1,7 @@
 # PCB Carrier Board v0.2 Design
 
 Spec: `pcb-carrier-v0-2`  
-Status: design-draft  
+Status: design-approved  
 Created: 2026-08-29  
 Brainstorm: `./brainstorm.md`
 Requirements: `./requirements.md`
