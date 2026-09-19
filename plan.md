@@ -62,9 +62,31 @@ hung boot. Fix, firmware-only, no BOM change:
 Keep the 2.2 kΩ in place: with open-drain CS it is no longer in the rise path
 (that is TGT's pull-up into its own pin capacitance, ~200 ns), the fall gives
 3.3 × 2.2/(2.2+45) ≈ **150 mV** at TGT's pin, and the resistor still limits
-fault current and the reverse path (TGT up, KBD down: ~60 µA through the
-internal pull-up). ⚠ Do **not** solve this by raising the series resistance —
-see the failed 22 kΩ experiment below.
+fault current and the reverse path. ⚠ Do **not** solve this by raising the
+series resistance — see the failed 22 kΩ experiment below.
+
+**Reverse path, measured 2026-09-17 (benign, but characterise it).** The fix
+moves a small current the other way: TGT powered from the Amiga, KBD's 5 V off,
+TGT's internal pull-up feeds CS → 2.2 kΩ → KBD's clamps. KBD's 3V3 floats at
+**0.9–1.1 V**, wandering because an undriven rail has no defined sink. Lifting
+CS collapses it to 0 V over ~1 s (decoupling discharging through the module's
+~19 kΩ leakage), confirming CS is the *only* path in this direction too.
+
+That current is ~2–3× what a nominal 45 kΩ pull-up should deliver, so the S3's
+internal pull-up is well below its nominal value on these parts. **Verdict:
+harmless** — with everything connected to a real A1200, cycling KBD's 5 V
+(off / 1 s / on, i.e. starting from the pre-charged state) booted and linked
+**5/5**, and cycling the Amiga likewise **5/5**.
+
+⚠ **Rejected: bleeder resistors.** 10 kΩ from 3V3 to GND on both boards was
+tried to give the injected current a defined sink. It **did not move the
+voltage** — still ~1 V with and without — because the source is stiffer than
+modelled. Removed. Fix the source, not the sink. (Also: do not trust in-circuit
+resistance readings on these rails. The LDO, ESD diodes and bulk caps make them
+nonlinear and polarity-dependent — the same node read 6.6 kΩ then 3.7 kΩ.)
+
+**v0.2 option, not required:** replace TGT's loosely-specified internal pull-up
+with an explicit **100 kΩ** from CS to TGT's 3V3 for a deterministic ~17 µA.
 
 - KBD is SPI **master** (it produces the frequent traffic). TGT is slave.
 - The keyboard plugs into KBD's USB-C port; TGT's USB-C port plugs into the

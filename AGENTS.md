@@ -92,6 +92,13 @@ Board def is in-repo (`boards/waveshare_esp32_s3_zero.json`). Firmware is
   inrush/OCP limits and fails deterministically on this class of defect. Phone
   chargers, A-to-C paths and the A1200's linear supply all absorb the surge and
   hide it. Test power-up-order bugs on the Mac, not on a charger.
+- **Reverse path is benign (measured):** TGT powered, KBD off, KBD's 3V3 floats
+  at 0.9–1.1 V via TGT's CS pull-up. Verified 5/5 both power-cycle orders on a
+  real A1200. ⚠ **Bleeder resistors were tried and rejected** — 10 kΩ to GND did
+  not move the voltage; fix the source (explicit 100 kΩ CS pull-up), not the
+  sink. ⚠ **In-circuit resistance readings on these rails are meaningless** (LDO
+  + ESD diodes + bulk caps → nonlinear, polarity-dependent; same node read
+  6.6 kΩ then 3.7 kΩ). Measure voltage under real conditions instead.
 - **Keyboard detection:** identify keyboards by parsing the HID **report
   descriptor** (Usage Page 0x01 / Usage 0x06), not just the boot proto byte
   (handles composite / hubbed / non-boot keyboards); **dedup** identical reports
