@@ -252,6 +252,10 @@ void app_main(void)
         .flags = 0,
     };
     ESP_ERROR_CHECK(spi_slave_initialize(SPI_HOST_ID, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
+    /* The idle-high pull-up for CS comes from TGT's OWN rail, so an unpowered
+     * TGT presents 0 V here and KBD's open-drain CS cannot back-feed it.
+     * ~45k internal => ~60 uA in the reverse case (TGT up, KBD down). */
+    ESP_ERROR_CHECK(gpio_set_pull_mode(PIN_CS, GPIO_PULLUP_ONLY));
 
     xTaskCreate(spi_task, "spi", 4096, NULL, 6, NULL);
 

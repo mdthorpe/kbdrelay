@@ -24,6 +24,8 @@
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "driver/spi_master.h"
+#include "driver/gpio.h"
+#include "esp_rom_sys.h"
 #include "usb/usb_host.h"
 #include "usb/hid_host.h"
 #include "led_strip.h"
@@ -40,7 +42,7 @@ static const char *TAG = "kbd";
 #define PIN_CS      7
 #define PIN_DR      8            /* DATA_READY: input (LED backchannel, later) */
 #define SPI_HOST_ID SPI2_HOST
-#define SPI_CLOCK_HZ (1 * 1000 * 1000)
+#define SPI_CLOCK_HZ 250000
 #define HEARTBEAT_MS 25
 
 static spi_device_handle_t s_spi;
@@ -248,7 +250,18 @@ static void spi_master_task(void *arg)
             .tx_buffer = tx,
             .rx_buffer = rx,
         };
-        if (spi_device_transmit(s_spi, &t) == ESP_OK) {
+        /* Soft CS, open-drain: assert (sink low), transact, release (hi-Z).
+         * CS is the only link line that would otherwise idle HIGH, and at
+         * 2.2k series it back-feeds ~460 uA into an unpowered TGT, parking
+         * its 3V3 rail at 1.68 V and defeating power-on reset (measured).
+         * Open-drain can only sink, so it cannot inject; TGT supplies the
+         * idle pull-up from its own rail. */
+        gpio_set_level(PIN_CS, 0);
+        esp_rom_delay_us(2);                 /* CS setup before first SCK */
+        esp_err_t xfer = spi_device_transmit(s_spi, &t);
+        esp_rom_delay_us(2);                 /* CS hold after last SCK */
+        gpio_set_level(PIN_CS, 1);
+        if (xfer == ESP_OK) {
             bridge_frame_t in;
             if (bridge_decode(rx, &in) && in.type == BRIDGE_TYPE_LED_REPORT) {
                 static uint8_t last_leds = 0xFF;
@@ -415,11 +428,19 @@ void app_main(void)
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
     };
+    /* CS driven by hand, open-drain, released (hi-Z) at idle. */
+    const gpio_config_t cs_cfg = {
+        .pin_bit_mask = 1ULL << PIN_CS,
+        .mode = GPIO_MODE_OUTPUT_OD,
+    };
+    ESP_ERROR_CHECK(gpio_config(&cs_cfg));
+    gpio_set_level(PIN_CS, 1);
+
     ESP_ERROR_CHECK(spi_bus_initialize(SPI_HOST_ID, &buscfg, SPI_DMA_CH_AUTO));
     const spi_device_interface_config_t devcfg = {
         .clock_speed_hz = SPI_CLOCK_HZ,
         .mode = 0,
-        .spics_io_num = PIN_CS,
+        .spics_io_num = -1,          /* soft CS: see spi_master_task */
         .queue_size = 3,
     };
     ESP_ERROR_CHECK(spi_bus_add_device(SPI_HOST_ID, &devcfg, &s_spi));

@@ -80,8 +80,25 @@ Board def is in-repo (`boards/waveshare_esp32_s3_zero.json`). Firmware is
   grounds common, **5 V never merged**. A **bulk cap (≥470 µF)** on KBD's 5 V is
   required or high-inrush keyboards brown out at plug-in.
 - **Backfeed:** the two boards share SPI signal lines; **~2.2 kΩ series R** on
-  each limits backfeed/latch-up and the power-up-order pre-charge. A powered
-  USB-UART debug adapter can back-power a board (dev-only artifact).
+  each limits fault current. ⚠ Series R does **not** block the DC backfeed path
+  into an unpowered peer's ESD clamps — **CS is the only line that idles HIGH**
+  and alone parked TGT's 3V3 at **1.68 V**, defeating power-on reset. Fixed in
+  firmware (2026-09-17): KBD drives CS **open-drain**, TGT supplies the idle
+  pull-up **from its own rail**. ⚠ Do **not** "fix" this by raising the series
+  resistors — 22.2 kΩ was tried and broke the link (SCK at TGT's pin was 1 V
+  low / 2.8 V high; the RC never settles and S3 GPIOs have no Schmitt trigger).
+  A powered USB-UART debug adapter can back-power a board (dev-only artifact).
+- **Strict-host regression rig:** a **MacBook over C-to-C** enforces Type-C
+  inrush/OCP limits and fails deterministically on this class of defect. Phone
+  chargers, A-to-C paths and the A1200's linear supply all absorb the surge and
+  hide it. Test power-up-order bugs on the Mac, not on a charger.
+- **Reverse path is benign (measured):** TGT powered, KBD off, KBD's 3V3 floats
+  at 0.9–1.1 V via TGT's CS pull-up. Verified 5/5 both power-cycle orders on a
+  real A1200. ⚠ **Bleeder resistors were tried and rejected** — 10 kΩ to GND did
+  not move the voltage; fix the source (explicit 100 kΩ CS pull-up), not the
+  sink. ⚠ **In-circuit resistance readings on these rails are meaningless** (LDO
+  + ESD diodes + bulk caps → nonlinear, polarity-dependent; same node read
+  6.6 kΩ then 3.7 kΩ). Measure voltage under real conditions instead.
 - **Keyboard detection:** identify keyboards by parsing the HID **report
   descriptor** (Usage Page 0x01 / Usage 0x06), not just the boot proto byte
   (handles composite / hubbed / non-boot keyboards); **dedup** identical reports
