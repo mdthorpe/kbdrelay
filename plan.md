@@ -41,6 +41,30 @@ signal line (SCK, MOSI, MISO, CS, DATA_READY) at the driving end. This protects
 GPIOs when one board is powered and the other isn't (FR5.4, closes the
 unpowered-peer concern from [VERIFY-3]) and tames breadboard ringing. Include
 them before soldering a permanent version. GND is a direct connection (no R).
+The v0.1 board fits **2.2 kΩ**; keep that value (see below).
+
+**CS is open-drain (ADOPTED, 2026-09-17 — series resistors are NOT enough):**
+series resistance limits backfeed *current* but does not block the DC path into
+an unpowered peer's ESD clamps. Of the five signals, **CS is the only one that
+idles HIGH**, so it injects continuously; SCK and MOSI idle low and only inject
+for the 384 µs a frame is in flight (~1.5 % duty). Measured: with KBD powered
+and TGT unpowered, CS alone parked TGT's 3V3 rail at **1.68 V** — above the POR
+release threshold and below the flash's minimum, so TGT came out of reset into a
+hung boot. Fix, firmware-only, no BOM change:
+
+- **KBD** drives CS by hand as `GPIO_MODE_OUTPUT_OD` (`spics_io_num = -1`),
+  asserting low around each transfer with 2 µs setup/hold. Open-drain can only
+  sink, so it cannot inject.
+- **TGT** supplies the idle-high level from **its own rail** via
+  `gpio_set_pull_mode(PIN_CS, GPIO_PULLUP_ONLY)` (~45 kΩ internal). An
+  unpowered TGT therefore presents 0 V at CS and there is nothing to feed back.
+
+Keep the 2.2 kΩ in place: with open-drain CS it is no longer in the rise path
+(that is TGT's pull-up into its own pin capacitance, ~200 ns), the fall gives
+3.3 × 2.2/(2.2+45) ≈ **150 mV** at TGT's pin, and the resistor still limits
+fault current and the reverse path (TGT up, KBD down: ~60 µA through the
+internal pull-up). ⚠ Do **not** solve this by raising the series resistance —
+see the failed 22 kΩ experiment below.
 
 - KBD is SPI **master** (it produces the frequent traffic). TGT is slave.
 - The keyboard plugs into KBD's USB-C port; TGT's USB-C port plugs into the
@@ -77,6 +101,25 @@ them before soldering a permanent version. GND is a direct connection (no R).
   fighting, with backfeed risk into a vintage USB port (FR5.3).
   **[VERIFY-1]** Confirm the same schematic detail before first full-chain
   power-up.
+- **Power-up order was order-dependent, and is no longer (2026-09-17).** Before
+  the open-drain CS fix, powering KBD first and then plugging TGT left TGT dead.
+  Two distinct mechanisms, both traced to the CS pre-charge above:
+  - *On a crude 5 V source* (phone charger, A-to-C, and by extension the
+    A1200's linear supply) the surge is absorbed and the board boots anyway —
+    which is why v0.1 appeared to work. "It boots because the supply is too
+    crude to object" is luck, not margin.
+  - *On a strict USB Type-C source* (MacBook, C-to-C) the pre-charged die draws
+    a crowbar surge on the VBUS ramp that trips the port's OCP; it retries
+    forever and VBUS never exceeds ~1 V. **A MacBook over C-to-C is therefore
+    the regression rig for this class of bug** — it fails deterministically on
+    defects every other supply hides.
+- ⚠ **Raising the series resistors is NOT the fix (failed experiment,
+  2026-09-17).** 22.2 kΩ on all five lines dropped the pre-charge from 1.68 V to
+  420 mV and did fix the power-up problem — and broke the link completely. SCK
+  at TGT's pin measured **1 V low / 2.8 V high**: the RC never settles, and 1 V
+  is above the S3's ~0.83 V V_IL, so the slave never sees a clock edge at all.
+  Dropping SPI to 250 kHz did not rescue it. ESP32-S3 GPIOs have no Schmitt
+  hysteresis, so slow edges are doubly hostile. Fix the *path*, not the current.
 - **Bench workflow:** while developing TGT with no target attached, power it
   via its USB-C from any charger. The rail is safe for TGT only while its
   USB-C is empty — which is a rule someone forgets at 11pm, hence the
